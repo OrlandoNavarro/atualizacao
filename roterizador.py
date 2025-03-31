@@ -91,17 +91,33 @@ def criar_mapa(pedidos_df):
     
     return mapa
 
+# Função para alocar pedidos nos caminhões respeitando os limites de peso e quantidade de caixas
+def alocar_pedidos(pedidos_df, caminhoes_df):
+    pedidos_df['Caminhao'] = None
+    for _, caminhao in caminhoes_df.iterrows():
+        capacidade_peso = caminhao['Capacidade de Peso']
+        capacidade_caixas = caminhao['Capacidade de Caixas']
+        
+        pedidos_alocados = pedidos_df[(pedidos_df['Peso dos Itens'] <= capacidade_peso) & (pedidos_df['Qtde. dos Itens'] <= capacidade_caixas)]
+        pedidos_df.loc[pedidos_alocados.index, 'Caminhao'] = caminhao['Placa']
+        
+        capacidade_peso -= pedidos_alocados['Peso dos Itens'].sum()
+        capacidade_caixas -= pedidos_alocados['Qtde. dos Itens'].sum()
+    
+    return pedidos_df
+
 # Função principal para o painel interativo
 def main():
     st.title("Roteirizador de Pedidos")
     
-    # Upload do arquivo Excel
-    uploaded_file = st.file_uploader("Escolha o arquivo Excel", type=["xlsm"])
+    # Upload dos arquivos Excel
+    uploaded_pedidos = st.file_uploader("Escolha o arquivo Excel de Pedidos", type=["xlsm"])
+    uploaded_caminhoes = st.file_uploader("Escolha o arquivo Excel da Frota", type=["xlsm"])
     
-    if uploaded_file is not None:
+    if uploaded_pedidos is not None and uploaded_caminhoes is not None:
         # Leitura das planilhas
-        pedidos_df = pd.read_excel(uploaded_file, sheet_name='Pedidos', engine='openpyxl')
-        caminhoes_df = pd.read_excel(uploaded_file, sheet_name='Caminhoes', engine='openpyxl')
+        pedidos_df = pd.read_excel(uploaded_pedidos, sheet_name='Pedidos', engine='openpyxl')
+        caminhoes_df = pd.read_excel(uploaded_caminhoes, sheet_name='Caminhoes', engine='openpyxl')
         
         # Processamento dos dados
         pedidos_df = pedidos_df[pedidos_df['Peso dos Itens'] > 0]
@@ -115,6 +131,9 @@ def main():
             'Qtde. dos Itens': 'sum',
             'Peso dos Itens': 'sum'
         }).reset_index()
+        
+        # Alocar pedidos nos caminhões respeitando os limites de peso e quantidade de caixas
+        pedidos_df = alocar_pedidos(pedidos_df, caminhoes_df)
         
         # Opções de roteirização
         rota_tsp = st.checkbox("Aplicar TSP")
