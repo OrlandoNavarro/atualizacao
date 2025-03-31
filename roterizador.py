@@ -15,6 +15,9 @@ from streamlit_folium import folium_static
 api_key = 'AIzaSyCOMqaimUuQq0C7IFyo80jhxmCtxBr5Uio'
 gmaps = googlemaps.Client(key=api_key)
 
+# Endereço de partida fixo
+endereco_partida = "Avenida Antonio Ortega, 3604 - Pinhal, Cabreúva - SP"
+
 # Função para calcular distância entre dois endereços usando Google Maps
 def calcular_distancia(endereco1, endereco2):
     result = gmaps.distance_matrix(endereco1, endereco2)
@@ -26,10 +29,13 @@ def criar_grafo_tsp(pedidos_df):
     G = nx.Graph()
     enderecos = pedidos_df['Endereço de Entrega'].unique()
     
+    # Adicionar o endereço de partida
+    G.add_node(endereco_partida)
+    
     for endereco in enderecos:
         G.add_node(endereco)
     
-    for (endereco1, endereco2) in permutations(enderecos, 2):
+    for (endereco1, endereco2) in permutations([endereco_partida] + list(enderecos), 2):
         distancia = calcular_distancia(endereco1, endereco2)
         G.add_edge(endereco1, endereco2, weight=distancia)
     
