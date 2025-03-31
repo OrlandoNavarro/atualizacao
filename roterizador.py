@@ -39,6 +39,17 @@ def obter_coordenadas_google(endereco):
         st.error(f"Erro ao tentar obter as coordenadas: {e}")
         return None
 
+# Função para transformar colunas G, H e I em um único endereço com delimitador e obter coordenadas
+def transformar_e_obter_coordenadas(pedidos_df):
+    # Concatenar colunas G, H e I para formar o endereço completo
+    pedidos_df['Endereço Completo'] = pedidos_df.apply(lambda row: f"{row['G']}, {row['H']}, {row['I']}", axis=1)
+    
+    # Adicionar colunas de Latitude e Longitude
+    pedidos_df['Latitude'] = pedidos_df['Endereço Completo'].apply(lambda x: obter_coordenadas_google(x)[0] if obter_coordenadas_google(x) else None)
+    pedidos_df['Longitude'] = pedidos_df['Endereço Completo'].apply(lambda x: obter_coordenadas_google(x)[1] if obter_coordenadas_google(x) else None)
+    
+    return pedidos_df
+
 # Função para calcular distância entre dois endereços usando a fórmula de Haversine
 def calcular_distancia(endereco1, endereco2):
     if endereco1 == endereco_partida:
@@ -73,9 +84,86 @@ def criar_grafo_tsp(pedidos_df):
     return G
 
 # Função para resolver o TSP usando Algoritmo Genético
-def resolver_tsp_genetico(G):
-    # Implementação do algoritmo genético para TSP
-    pass
+def resolver_tsp_genetico(G, population_size=100, generations=500, mutation_rate=0.01):
+    def create_route(nodes):
+        route = random.sample(nodes, len(nodes))
+        return route
+
+    def initial_population(population_size, nodes):
+        return [create_route(nodes) for _ in range(population_size)]
+
+    def route_distance(route):
+        distance = 0
+        for i in range(len(route)):
+            distance += G[route[i-1]][route[i]]['weight']
+        return distance
+
+    def rank_routes(population):
+        return sorted(population, key=lambda route: route_distance(route))
+
+    def selection(population, elite_size):
+        ranked_population = rank_routes(population)
+        return ranked_population[:elite_size]
+
+    def crossover(parent1, parent2):
+        child = []
+        childP1 = []
+        childP2 = []
+
+        geneA = int(random.random() * len(parent1))
+        geneB = int(random.random() * len(parent1))
+
+        startGene = min(geneA, geneB)
+        endGene = max(geneA, geneB)
+
+        for i in range(startGene, endGene):
+            childP1.append(parent1[i])
+
+        childP2 = [item for item in parent2 if item not in childP1]
+
+        child = childP1 + childP2
+        return child
+
+    def mutate(route, mutation_rate):
+        for swapped in range(len(route)):
+            if random.random() < mutation_rate:
+                swapWith = int(random.random() * len(route))
+
+                city1 = route[swapped]
+                city2 = route[swapWith]
+
+                route[swapped] = city2
+                route[swapWith] = city1
+        return route
+
+    def next_generation(current_gen, elite_size, mutation_rate):
+        elite = selection(current_gen, elite_size)
+        children = []
+
+        for i in range(len(elite)):
+            children.append(elite[i])
+
+        non_elite = current_gen[elite_size:]
+        for i in range(len(non_elite)):
+            parent1 = random.choice(elite)
+            parent2 = random.choice(non_elite)
+            child = crossover(parent1, parent2)
+            children.append(child)
+
+        next_gen = [mutate(child, mutation_rate) for child in children]
+        return next_gen
+
+    nodes = list(G.nodes)
+    population = initial_population(population_size, nodes)
+    elite_size = int(0.2 * population_size)
+
+    for _ in range(generations):
+        population = next_generation(population, elite_size, mutation_rate)
+
+    best_route = rank_routes(population)[0]
+    best_distance = route_distance(best_route)
+
+    return best_route, best_distance
 
 # Função para resolver o VRP usando OR-Tools
 def resolver_vrp(pedidos_df, caminhoes_df, modo_roteirizacao, criterio_otimizacao):
@@ -174,8 +262,9 @@ def cadastrar_caminhoes():
     # Exibir caminhões cadastrados
     st.subheader("Caminhões Cadastrados")
     st.dataframe(caminhoes_df)
-    
-    # Formulário para atualizar status de caminhão
+
+# Formulário para atualizar status de caminhão
+def atualizar_status_caminhao(caminhoes_df):
     with st.form("atualizar_status"):
         st.subheader("Atualizar Status de Caminhão")
         placas_atualizar = st.selectbox("Selecione a Placa do Caminhão", caminhoes_df['Placas'].unique())
@@ -225,13 +314,8 @@ def main():
         # Filtrar caminhões ativos
         caminhoes_df = caminhoes_df[caminhoes_df['Ativo'] == 'Ativo']
         
-        # Concatenar colunas G, H e I para formar o endereço completo
-        pedidos_df['Endereço Completo'] = pedidos_df.apply(lambda row: f"{row['G']} {row['H']} {row['I']}", axis=1)
-        
-        # Adicionar colunas de Latitude e Longitude se não existirem
-        if 'Latitude' not in pedidos_df.columns or 'Longitude' not in pedidos_df.columns:
-            pedidos_df['Latitude'] = pedidos_df['Endereço Completo'].apply(lambda x: obter_coordenadas_google(x)[0] if obter_coordenadas_google(x) else None)
-            pedidos_df['Longitude'] = pedidos_df['Endereço Completo'].apply(lambda x: obter_coordenadas_google(x)[1] if obter_coordenadas_google(x) else None)
+        # Transformar endereços e obter coordenadas
+        pedidos_df = transformar_e_obter_coordenadas(pedidos_df)
         
         # Processamento dos dados
         pedidos_df = pedidos_df[pedidos_df['Peso dos Itens'] > 0]
