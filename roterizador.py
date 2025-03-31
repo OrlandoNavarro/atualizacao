@@ -12,7 +12,7 @@ import folium
 from streamlit_folium import folium_static
 
 # Chave da API do Google
-api_key = 'AIzaSyBpl7-N-RrwTVI6f2k5Kx5jQ0S1FamvNow'
+api_key = 'AIzaSyCOMqaimUuQq0C7IFyo80jhxmCtxBr5Uio'
 gmaps = googlemaps.Client(key=api_key)
 
 # Endereço de partida fixo
@@ -80,11 +80,14 @@ def agrupar_por_regiao(pedidos_df, n_clusters=5):
 def criar_mapa(pedidos_df):
     mapa = folium.Map(location=[-23.55052, -46.633308], zoom_start=10)
     
-    for _, row in pedidos_df.iterrows():
-        folium.Marker(
-            location=[row['Latitude'], row['Longitude']],
-            popup=row['Endereço de Entrega']
-        ).add_to(mapa)
+    if 'Latitude' in pedidos_df.columns and 'Longitude' in pedidos_df.columns:
+        for _, row in pedidos_df.iterrows():
+            folium.Marker(
+                location=[row['Latitude'], row['Longitude']],
+                popup=row['Endereço de Entrega']
+            ).add_to(mapa)
+    else:
+        st.error("As colunas 'Latitude' e 'Longitude' não foram encontradas no DataFrame.")
     
     return mapa
 
