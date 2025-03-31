@@ -12,6 +12,7 @@ import folium
 from streamlit_folium import folium_static
 from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
+import random
 
 # Inicializar o geolocalizador com um tempo de timeout maior
 geolocator = Nominatim(user_agent="myGeocoder", timeout=10)
@@ -126,8 +127,9 @@ def resolver_tsp_genetico(G, population_size=100, generations=500, mutation_rate
         childP2 = [item for item in parent2 if item not in childP1]
 
         child = childP1 + childP2
-        return(route, mutation_rate):
-        for swapped in range(len(route)):
+        return child
+
+   )):
             if random.random() < mutation_rate:
                 swapWith = int(random.random() * len(route))
 
@@ -143,7 +145,7 @@ def resolver_tsp_genetico(G, population_size=100, generations=500, mutation_rate
         children = []
 
         for i in range(len(elite)):
-            children.append(elite[i])
+           [i])
 
         non_elite = current_gen[elite_size:]
         for i in range(len(non_elite)):
