@@ -20,6 +20,8 @@ geolocator = Nominatim(user_agent="myGeocoder")
 api_key = 'AIzaSyBz5rK-DhKuU2jcekmTqh8bRNPMv0wP0Sc'
 gmaps = googlemaps.Client(key=api_key)
 
+# Endereço de partida fixo
+endereco_partida = "Avenida Antonio Ortega, 3604 - Pinhal, Cabreúva - SP"
 # Coordenadas geográficas do endereço de partida
 endereco_partida_coords = (-23.0838, -47.1336)  # Exemplo de coordenadas para Cabreúva, SP
 
@@ -150,7 +152,8 @@ def cadastrar_caminhoes():
         capac_kg = st.number_input("Capacidade em Quilogramas", min_value=0)
         descricao_veiculo = st.text_input("Descrição do Veículo")
         transportador = st.text_input("Transportador")
-        ativo = st.selectbox("Status", ["Ativo", "Inativo"])        
+        ativo = st.selectbox("Status", ["Ativo", "Inativo"])
+        
         submit_button = st.form_submit_button("Cadastrar")
         
         if submit_button:
@@ -193,6 +196,8 @@ def main():
         cadastrar_caminhoes()
     
     # Upload dos arquivos Excel
+    uploaded_pedidos = st.file_uploader
+        # Upload dos arquivos Excel
     uploaded_pedidos = st.file_uploader("Escolha o arquivo Excel de Pedidos", type=["xlsm"])
     uploaded_caminhoes = st.file_uploader("Escolha o arquivo Excel da Frota", type=["xlsm"])
     
@@ -221,7 +226,7 @@ def main():
             frota_existente_df = pd.read_excel("caminhoes_frota.xlsx", engine='openpyxl')
             caminhoes_df = pd.concat([frota_existente_df, caminhoes_df]).drop_duplicates(subset=['Placas'], keep='last')
         except FileNotFoundError:
-            pass
+            caminhoes_df.to_excel("caminhoes_frota.xlsx", index=False)
         
         caminhoes_df.to_excel("caminhoes_frota.xlsx", index=False)
         
