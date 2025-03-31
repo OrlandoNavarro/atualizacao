@@ -76,6 +76,31 @@ def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota):
     
     return pedidos_df
 
+# Função para agrupar por região usando KMeans
+def agrupar_por_regiao(pedidos_df, n_clusters=5):
+    pedidos_df['Coordenada X'] = pedidos_df['Cidade de Entrega'].apply(lambda x: hash(x) % 100)
+    pedidos_df['Coordenada Y'] = pedidos_df['Bairro de Entrega'].apply(lambda x: hash(x) % 100)
+    
+    kmeans = KMeans(n_clusters=n_clusters)
+    pedidos_df['Regiao'] = kmeans.fit_predict(pedidos_df[['Coordenada X', 'Coordenada Y']])
+    
+    return pedidos_df
+
+# Função para criar um mapa com folium
+def criar_mapa(pedidos_df):
+    mapa = folium.Map(location=[-23.55052, -46.633308], zoom_start=10)
+    
+    if 'Latitude' in pedidos_df.columns and 'Longitude' in pedidos_df.columns:
+        for _, row in pedidos_df.iterrows():
+            folium.Marker(
+                location=[row['Latitude'], row['Longitude']],
+                popup=row['Endereço de Entrega']
+            ).add_to(mapa)
+    else:
+        st.error("As colunas 'Latitude' e 'Longitude' não foram encontradas no DataFrame.")
+    
+    return mapa
+
 # Função principal para o painel interativo
 def main():
     st.title("Roteirizador de Pedidos")
@@ -110,12 +135,6 @@ def main():
         
         # Definir capacidade da frota
         percentual_frota = st.slider("Capacidade da frota a ser usada (%)", min_value=0, max_value=100, value=100)
-        
-        # Montagem de carga
-        cargas = pedidos_df.groupby(['Regiao', 'Placas']).agg({
-            'Qtde. dos Itens': 'sum',
-            'Peso dos Itens': 'sum'
-        }).reset_index()
         
         # Alocar pedidos nos caminhões respeitando os limites de peso e quantidade de caixas
         pedidos_df = otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota)
