@@ -11,3 +11,4 @@ folium
 streamlit_folium
 streamlit_authenticator
 openpyxl
+geopy
