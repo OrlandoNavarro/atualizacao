@@ -53,49 +53,13 @@ def resolver_vrp(pedidos_df, caminhoes_df):
 
 # Função para otimizar o aproveitamento da frota usando programação linear
 def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota):
-    # Implementação da função de otimização do aproveitamento da frota usando programação linear
-    pass
-
-# Função para calcular o melhor custo usando programação linear
-def calcular_melhor_custo(pedidos_df, caminhoes_df):
-    # Implementação da função de cálculo do melhor custo usando programação linear
-    pass
-
-# Função para definir a quantidade média de pedidos por região usando Machine Learning
-def definir_media_pedidos_por_regiao(pedidos_df, media_pedidos):
-    # Implementação da função para definir a quantidade média de pedidos por região usando Machine Learning
-    pass
-
-# Função para agrupar por região usando KMeans
-def agrupar_por_regiao(pedidos_df, n_clusters=5):
-    pedidos_df['Coordenada X'] = pedidos_df['Cidade de Entrega'].apply(lambda x: hash(x) % 100)
-    pedidos_df['Coordenada Y'] = pedidos_df['Bairro de Entrega'].apply(lambda x: hash(x) % 100)
-    
-    kmeans = KMeans(n_clusters=n_clusters)
-    pedidos_df['Regiao'] = kmeans.fit_predict(pedidos_df[['Coordenada X', 'Coordenada Y']])
-    
-    return pedidos_df
-
-# Função para criar um mapa com folium
-def criar_mapa(pedidos_df):
-    mapa = folium.Map(location=[-23.55052, -46.633308], zoom_start=10)
-    
-    if 'Latitude' in pedidos_df.columns and 'Longitude' in pedidos_df.columns:
-        for _, row in pedidos_df.iterrows():
-            folium.Marker(
-                location=[row['Latitude'], row['Longitude']],
-                popup=row['Endereço de Entrega']
-            ).add_to(mapa)
-    else:
-        st.error("As colunas 'Latitude' e 'Longitude' não foram encontradas no DataFrame.")
-    
-    return mapa
-
-# Função para alocar pedidos nos caminhões respeitando os limites de peso e quantidade de caixas
-def alocar_pedidos(pedidos_df, caminhoes_df):
     pedidos_df['Nº Carga'] = None
     pedidos_df['Placas'] = None
     carga_numero = 1
+    
+    # Ajustar a capacidade da frota
+    caminhoes_df['Capac. Kg'] *= (percentual_frota / 100)
+    caminhoes_df['Capac. Cx'] *= (percentual_frota / 100)
     
     for _, caminhao in caminhoes_df.iterrows():
         capacidade_peso = caminhao['Capac. Kg']
@@ -125,12 +89,27 @@ def main():
         pedidos_df = pd.read_excel(uploaded_pedidos, engine='openpyxl')
         caminhoes_df = pd.read_excel(uploaded_caminhoes, engine='openpyxl')
         
+        # Verificar se as colunas necessárias estão presentes
+        colunas_pedidos = ['Nº Carga', 'Placas', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Região Logística', 'Qtde. dos Itens', 'Peso dos Itens']
+        colunas_caminhoes = ['Nº Carga', 'Placas', 'Capac. Cx', 'Capac. Kg', 'Descrição Veículo', 'Transportador']
+        
+        if not all(col in pedidos_df.columns for col in colunas_pedidos):
+            st.error("As colunas necessárias não foram encontradas na planilha de pedidos.")
+            return
+        
+        if not all(col in caminhoes_df.columns for col in colunas_caminhoes):
+            st.error("As colunas necessárias não foram encontradas na planilha da frota.")
+            return
+        
         # Processamento dos dados
         pedidos_df = pedidos_df[pedidos_df['Peso dos Itens'] > 0]
         
         # Opções de agrupamento por região
         n_clusters = st.slider("Número de regiões para agrupar", min_value=2, max_value=10, value=5)
         pedidos_df = agrupar_por_regiao(pedidos_df, n_clusters)
+        
+        # Definir capacidade da frota
+        percentual_frota = st.slider("Capacidade da frota a ser usada (%)", min_value=0, max_value=100, value=100)
         
         # Montagem de carga
         cargas = pedidos_df.groupby(['Regiao', 'Placas']).agg({
@@ -139,7 +118,7 @@ def main():
         }).reset_index()
         
         # Alocar pedidos nos caminhões respeitando os limites de peso e quantidade de caixas
-        pedidos_df = alocar_pedidos(pedidos_df, caminhoes_df)
+        pedidos_df = otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota)
         
         # Opções de roteirização
         rota_tsp = st.checkbox("Aplicar TSP")
