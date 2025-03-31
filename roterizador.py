@@ -178,7 +178,7 @@ def main():
                 label="Baixar planilha",
                 data=file,
                 file_name="roterizacao_resultado.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
 
-main
+main()
