@@ -172,13 +172,13 @@ def main():
         pedidos_df.to_excel(output_file_path, index=False)
         st.write(f"Arquivo Excel com a roteirização feita foi salvo em: {output_file_path}")
         
-        # Botão para baixar o arquivo Excel
+       # Botão para baixar o arquivo Excel
         with open(output_file_path, "rb") as file:
             btn = st.download_button(
                 label="Baixar planilha",
                 data=file,
                 file_name="roterizacao_resultado.xlsx",
-                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
 
 main()
