@@ -10,6 +10,7 @@ from ortools.constraint_solver import routing_enums_pb2
 from ortools.constraint_solver import pywrapcp
 import folium
 from streamlit_folium import folium_static
+from sklearn.ensemble import RandomForestRegressor
 
 # Chave da API do Google
 api_key = 'AIzaSyCOMqaimUuQq0C7IFyo80jhxmCtxBr5Uio'
