@@ -2,4 +2,3 @@ googlemaps
 KMeans
 scikit-learn
 import pulp
-print(pulp.__version__)
