@@ -12,7 +12,7 @@ import folium
 from streamlit_folium import folium_static
 
 # Chave da API do Google
-api_key = 'AIzaSyCOMqaimUuQq0C7IFyo80jhxmCtxBr5Uio'
+api_key = 'AIzaSyBpl7-N-RrwTVI6f2k5Kx5jQ0S1FamvNow'
 gmaps = googlemaps.Client(key=api_key)
 
 # Endereço de partida fixo
