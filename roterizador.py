@@ -21,7 +21,7 @@ names = ["Orlando"]
 usernames = ["orlando"]
 passwords = ["Picole2024@"]
 
-hashed_passwords = stauth.Hasher(passwords).generate()
+hashed_passwords = [stauth.Hasher().hash(password) for password in passwords]
 
 authenticator = stauth.Authenticate(names, usernames, hashed_passwords, "app_dashboard", "abcdef", cookie_expiry_days=30)
 
