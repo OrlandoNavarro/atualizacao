@@ -10,23 +10,36 @@ from ortools.constraint_solver import routing_enums_pb2
 from ortools.constraint_solver import pywrapcp
 import folium
 from streamlit_folium import folium_static
-from googlemaps.exceptions import ApiError
+from geopy.geocoders import Nominatim
+from geopy.distance import geodesic
+
+# Inicializar o geolocalizador
+geolocator = Nominatim(user_agent="myGeocoder")
 
 # Chave da API do Google
-api_key = 'AIzaSyCOMqaimUuQq0C7IFyo80jhxmCtxBr5Uio'
+api_key = 'AIzaSyBz5rK-DhKuU2jcekmTqh8bRNPMv0wP0Sc'
 gmaps = googlemaps.Client(key=api_key)
 
 # Endereço de partida fixo
 endereco_partida = "Avenida Antonio Ortega, 3604 - Pinhal, Cabreúva - SP"
 
-# Função para calcular distância entre dois endereços usando Google Maps
+# Função para obter coordenadas geográficas de um endereço
+def obter_coordenadas(endereco):
+    location = geolocator.geocode(endereco)
+    if location:
+        return (location.latitude, location.longitude)
+    else:
+        st.error(f"Não foi possível obter as coordenadas para o endereço: {endereco}")
+        return None
+
+# Função para calcular distância entre dois endereços usando a fórmula de Haversine
 def calcular_distancia(endereco1, endereco2):
-    try:
-        result = gmaps.distance_matrix(endereco1, endereco2)
-        distancia = result['rows'][0]['elements'][0]['distance']['value']
+    coords_1 = obter_coordenadas(endereco1)
+    coords_2 = obter_coordenadas(endereco2)
+    if coords_1 and coords_2:
+        distancia = geodesic(coords_1, coords_2).meters
         return distancia
-    except ApiError as e:
-        st.error(f"Erro na API do Google Maps: {e}")
+    else:
         return None
 
 # Função para criar o grafo do TSP
@@ -109,9 +122,67 @@ def criar_mapa(pedidos_df):
     
     return mapa
 
+# Função para cadastrar caminhões
+def cadastrar_caminhoes():
+    st.title("Cadastro de Caminhões da Frota")
+    
+    # Carregar DataFrame existente ou criar um novo
+    try:
+        caminhoes_df = pd.read_excel("caminhoes_frota.xlsx", engine='openpyxl')
+    except FileNotFoundError:
+        caminhoes_df = pd.DataFrame(columns=['Nº Carga', 'Placas', 'Capac. Cx', 'Capac. Kg', 'Descrição Veículo', 'Transportador', 'Ativo'])
+    
+    # Formulário para cadastrar novo caminhão
+    with st.form("cadastrar_caminhao"):
+        st.subheader("Cadastrar Novo Caminhão")
+        num_carga = st.text_input("Número de Carga")
+        placas = st.text_input("Placas")
+        capac_cx = st.number_input("Capacidade em Caixas", min_value=0)
+        capac_kg = st.number_input("Capacidade em Quilogramas", min_value=0)
+        descricao_veiculo = st.text_input("Descrição do Veículo")
+        transportador = st.text_input("Transportador")
+        ativo = st.selectbox("Status", ["Ativo", "Inativo"])
+        
+        submit_button = st.form_submit_button("Cadastrar")
+        
+        if submit_button:
+            novo_caminhao = {
+                'Nº Carga': num_carga,
+                'Placas': placas,
+                'Capac. Cx': capac_cx,
+                'Capac. Kg': capac_kg,
+                'Descrição Veículo': descricao_veiculo,
+                'Transportador': transportador,
+                'Ativo': ativo
+            }
+            caminhoes_df = caminhoes_df.append(novo_caminhao, ignore_index=True)
+            caminhoes_df.to_excel("caminhoes_frota.xlsx", index=False)
+            st.success("Caminhão cadastrado com sucesso!")
+    
+    # Exibir caminhões cadastrados
+    st.subheader("Caminhões Cadastrados")
+    st.dataframe(caminhoes_df)
+    
+    # Formulário para atualizar status de caminhão
+    with st.form("atualizar_status"):
+        st.subheader("Atualizar Status de Caminhão")
+        placas_atualizar = st.selectbox("Selecione a Placa do Caminhão", caminhoes_df['Placas'].unique())
+        novo_status = st.selectbox("Novo Status", ["Ativo", "Inativo"])
+        
+        atualizar_button = st.form_submit_button("Atualizar Status")
+        
+        if atualizar_button:
+            caminhoes_df.loc[caminhoes_df['Placas'] == placas_atualizar, 'Ativo'] = novo_status
+            caminhoes_df.to_excel("caminhoes_frota.xlsx", index=False)
+            st.success("Status do caminhão atualizado com sucesso!")
+
 # Função principal para o painel interativo
 def main():
     st.title("Roteirizador de Pedidos")
+    
+    # Opção para cadastrar caminhões
+    if st.checkbox("Cadastrar Caminhões"):
+        cadastrar_caminhoes()
     
     # Upload dos arquivos Excel
     uploaded_pedidos = st.file_uploader("Escolha o arquivo Excel de Pedidos", type=["xlsm"])
@@ -122,9 +193,9 @@ def main():
         pedidos_df = pd.read_excel(uploaded_pedidos, engine='openpyxl')
         caminhoes_df = pd.read_excel(uploaded_caminhoes, engine='openpyxl')
         
-        # Verificar se as colunas necessárias estão presentes
+                # Verificar se as colunas necessárias estão presentes
         colunas_pedidos = ['Nº Carga', 'Placas', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Região Logística', 'Qtde. dos Itens', 'Peso dos Itens']
-        colunas_caminhoes = ['Nº Carga', 'Placas', 'Capac. Cx', 'Capac. Kg', 'Descrição Veículo', 'Transportador']
+        colunas_caminhoes = ['Nº Carga', 'Placas', 'Capac. Cx', 'Capac. Kg', 'Descrição Veículo', 'Transportador', 'Ativo']
         
         if not all(col in pedidos_df.columns for col in colunas_pedidos):
             st.error("As colunas necessárias não foram encontradas na planilha de pedidos.")
@@ -133,6 +204,9 @@ def main():
         if not all(col in caminhoes_df.columns for col in colunas_caminhoes):
             st.error("As colunas necessárias não foram encontradas na planilha da frota.")
             return
+        
+        # Filtrar caminhões ativos
+        caminhoes_df = caminhoes_df[caminhoes_df['Ativo'] == 'Ativo']
         
         # Processamento dos dados
         pedidos_df = pedidos_df[pedidos_df['Peso dos Itens'] > 0]
