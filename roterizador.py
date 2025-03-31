@@ -13,7 +13,7 @@ from streamlit_folium import folium_static
 from googlemaps.exceptions import ApiError
 
 # Chave da API do Google
-api_key = 'AIzaSyBpl7-N-RrwTVI6f2k5Kx5jQ0S1FamvNow'
+api_key = 'AIzaSyCOMqaimUuQq0C7IFyo80jhxmCtxBr5Uio'
 gmaps = googlemaps.Client(key=api_key)
 
 # Endereço de partida fixo
