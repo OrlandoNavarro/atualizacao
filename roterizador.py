@@ -93,16 +93,22 @@ def criar_mapa(pedidos_df):
 
 # Função para alocar pedidos nos caminhões respeitando os limites de peso e quantidade de caixas
 def alocar_pedidos(pedidos_df, caminhoes_df):
-    pedidos_df['Caminhao'] = None
+    pedidos_df['Nº Carga'] = None
+    pedidos_df['Placas'] = None
+    carga_numero = 1
+    
     for _, caminhao in caminhoes_df.iterrows():
-        capacidade_peso = caminhao['Capacidade de Peso']
-        capacidade_caixas = caminhao['Capacidade de Caixas']
+        capacidade_peso = caminhao['Capac. Kg']
+        capacidade_caixas = caminhao['Capac. Cx']
         
         pedidos_alocados = pedidos_df[(pedidos_df['Peso dos Itens'] <= capacidade_peso) & (pedidos_df['Qtde. dos Itens'] <= capacidade_caixas)]
-        pedidos_df.loc[pedidos_alocados.index, 'Caminhao'] = caminhao['Placa']
+        pedidos_df.loc[pedidos_alocados.index, 'Nº Carga'] = carga_numero
+        pedidos_df.loc[pedidos_alocados.index, 'Placas'] = caminhao['Placas']
         
         capacidade_peso -= pedidos_alocados['Peso dos Itens'].sum()
         capacidade_caixas -= pedidos_alocados['Qtde. dos Itens'].sum()
+        
+        carga_numero += 1
     
     return pedidos_df
 
@@ -127,7 +133,7 @@ def main():
         pedidos_df = agrupar_por_regiao(pedidos_df, n_clusters)
         
         # Montagem de carga
-        cargas = pedidos_df.groupby(['Regiao', 'COM017.Placas']).agg({
+        cargas = pedidos_df.groupby(['Regiao', 'Placas']).agg({
             'Qtde. dos Itens': 'sum',
             'Peso dos Itens': 'sum'
         }).reset_index()
