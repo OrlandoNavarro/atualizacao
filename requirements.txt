@@ -1,5 +1,11 @@
+pandas
 googlemaps
-KMeans
+streamlit
 scikit-learn
 pulp
 networkx
+ortools
+folium
+streamlit_folium
+streamlit_authenticator
+openpyxl
