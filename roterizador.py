@@ -125,18 +125,6 @@ def main():
         pedidos_df = pd.read_excel(uploaded_pedidos, engine='openpyxl')
         caminhoes_df = pd.read_excel(uploaded_caminhoes, engine='openpyxl')
         
-        # Verificar se as colunas necessárias estão presentes
-        colunas_pedidos = ['Nº Carga', 'Placas', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Região Logística', 'Qtde. dos Itens', 'Peso dos Itens']
-        colunas_caminhoes = ['Nº Carga', 'Placas', 'Capac. Cx', 'Capac. Kg', 'Descrição Veículo', 'Transportador']
-        
-        if not all(col in pedidos_df.columns for col in colunas_pedidos):
-            st.error("As colunas necessárias não foram encontradas na planilha de pedidos.")
-            return
-        
-        if not all(col in caminhoes_df.columns for col in colunas_caminhoes):
-            st.error("As colunas necessárias não foram encontradas na planilha da frota.")
-            return
-        
         # Processamento dos dados
         pedidos_df = pedidos_df[pedidos_df['Peso dos Itens'] > 0]
         
@@ -178,3 +166,16 @@ def main():
         
         # Gerar arquivo Excel com a roteirização feita
         output_file_path = 'roterizacao_resultado.xlsx'
+        pedidos_df.to_excel(output_file_path, index=False)
+        st.write(f"Arquivo Excel com a roteirização feita foi salvo em: {output_file_path}")
+        
+        # Botão para baixar o arquivo Excel
+        with open(output_file_path, "rb") as file:
+            btn = st.download_button(
+                label="Baixar planilha",
+                data=file,
+                file_name="roterizacao_resultado.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+
+main()
