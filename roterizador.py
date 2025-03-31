@@ -132,7 +132,7 @@ def main():
         pedidos_df = pedidos_df[pedidos_df['Peso dos Itens'] > 0]
         
         # Opções de agrupamento por região
-        n_clusters = st.slider("Número de regiões para agrupar", min_value=2, max_value=10, value=5)
+        n_clusters = st.slider("Número de regiões para agrupar", min_value=0, max_value=10, value=5)
         pedidos_df = agrupar_por_regiao(pedidos_df, n_clusters)
         
         # Definir capacidade da frota
@@ -169,7 +169,7 @@ def main():
             melhor_rota_vrp = resolver_vrp(pedidos_df, caminhoes_df, modo_roteirizacao, criterio_otimizacao, modo_despacho, tipo_despacho)
             st.write(f"Melhor rota VRP: {melhor_rota_vrp}")
         
-               # Exibir resultado
+        # Exibir resultado
         st.write("Dados dos pedidos:")
         st.dataframe(pedidos_df)
         
