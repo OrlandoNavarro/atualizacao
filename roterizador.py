@@ -140,8 +140,17 @@ def main():
         folium_static(mapa)
         
         # Gerar arquivo Excel com a roteirização feita
-        output_file_path = os.path.join(os.path.dirname(__file__), 'roterizacao_resultado.xlsx')
+        output_file_path = 'roterizacao_resultado.xlsx'
         pedidos_df.to_excel(output_file_path, index=False)
         st.write(f"Arquivo Excel com a roteirização feita foi salvo em: {output_file_path}")
+        
+        # Botão para baixar o arquivo Excel
+        with open(output_file_path, "rb") as file:
+            btn = st.download_button(
+                label="Baixar planilha",
+                data=file,
+                file_name="roterizacao_resultado.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
 
 main()
