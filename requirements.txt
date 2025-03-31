@@ -1,2 +1,3 @@
 googlemaps
 KMeans
+scikit-learn
