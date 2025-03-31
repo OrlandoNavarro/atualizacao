@@ -1,3 +1,4 @@
+streamlit_authenticator
 pandas
 googlemaps
 streamlit
