@@ -47,7 +47,7 @@ def resolver_tsp_genetico(G):
     pass
 
 # Função para resolver o VRP usando OR-Tools
-def resolver_vrp(pedidos_df, caminhoes_df):
+def resolver_vrp(pedidos_df, caminhoes_df, modo_roteirizacao, criterio_otimizacao, modo_despacho, tipo_despacho):
     # Implementação do VRP usando OR-Tools
     pass
 
@@ -141,6 +141,16 @@ def main():
         # Definir percentual de pedidos alocados por veículo
         percentual_pedidos = st.slider("Percentual de pedidos alocados por veículo (%)", min_value=0, max_value=100, value=100)
         
+        # Parâmetros de roteirização
+        modo_roteirizacao = st.selectbox("Modo de roteirização", ["Frota Mínima", "Balanceado"])
+        criterio_otimizacao = st.selectbox("Critério de otimização", ["Menor Tempo", "Menor Distância", "Menor Custo"])
+        
+        # Modos de despacho
+        modo_despacho = st.selectbox("Modo de despacho", ["Dispatching mode", "Grab mode", "Auto mode"])
+        
+        # Tipos de despacho
+        tipo_despacho = st.selectbox("Tipo de despacho", ["Routr only", "Routr + Dispatcher", "Dispatcher only"])
+        
         # Alocar pedidos nos caminhões respeitando os limites de peso e quantidade de caixas
         pedidos_df = otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, percentual_pedidos)
         
@@ -156,10 +166,10 @@ def main():
             pedidos_df['Ordem de Entrega TSP'] = pedidos_df['Endereço de Entrega'].apply(lambda x: melhor_rota.index(x) + 1)
         
         if rota_vrp:
-            melhor_rota_vrp = resolver_vrp(pedidos_df, caminhoes_df)
+            melhor_rota_vrp = resolver_vrp(pedidos_df, caminhoes_df, modo_roteirizacao, criterio_otimizacao, modo_despacho, tipo_despacho)
             st.write(f"Melhor rota VRP: {melhor_rota_vrp}")
         
-        # Exibir resultado
+               # Exibir resultado
         st.write("Dados dos pedidos:")
         st.dataframe(pedidos_df)
         
@@ -172,7 +182,7 @@ def main():
         pedidos_df.to_excel(output_file_path, index=False)
         st.write(f"Arquivo Excel com a roteirização feita foi salvo em: {output_file_path}")
         
-       # Botão para baixar o arquivo Excel
+        # Botão para baixar o arquivo Excel
         with open(output_file_path, "rb") as file:
             btn = st.download_button(
                 label="Baixar planilha",
