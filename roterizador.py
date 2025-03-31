@@ -191,11 +191,11 @@ def cadastrar_caminhoes():
 def main():
     st.title("Roteirizador de Pedidos")
     
-    # Opção para cadastrar caminhões
+       # Opção para cadastrar caminhões
     if st.checkbox("Cadastrar Caminhões"):
         cadastrar_caminhoes()
     
-        # Upload do arquivo Excel de Pedidos
+    # Upload do arquivo Excel de Pedidos
     uploaded_pedidos = st.file_uploader("Escolha o arquivo Excel de Pedidos", type=["xlsm"])
     
     if uploaded_pedidos is not None:
@@ -223,6 +223,11 @@ def main():
         
         # Filtrar caminhões ativos
         caminhoes_df = caminhoes_df[caminhoes_df['Ativo'] == 'Ativo']
+        
+        # Adicionar colunas de Latitude e Longitude se não existirem
+        if 'Latitude' not in pedidos_df.columns or 'Longitude' not in pedidos_df.columns:
+            pedidos_df['Latitude'] = pedidos_df['Endereço de Entrega'].apply(lambda x: obter_coordenadas(x)[0] if obter_coordenadas(x) else None)
+            pedidos_df['Longitude'] = pedidos_df['Endereço de Entrega'].apply(lambda x: obter_coordenadas(x)[1] if obter_coordenadas(x) else None)
         
         # Processamento dos dados
         pedidos_df = pedidos_df[pedidos_df['Peso dos Itens'] > 0]
