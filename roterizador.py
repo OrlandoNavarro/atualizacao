@@ -13,8 +13,8 @@ from streamlit_folium import folium_static
 from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
 
-# Inicializar o geolocalizador
-geolocator = Nominatim(user_agent="myGeocoder")
+# Inicializar o geolocalizador com um tempo de timeout maior
+geolocator = Nominatim(user_agent="myGeocoder", timeout=10)
 
 # Chave da API do Google
 api_key = 'AIzaSyBz5rK-DhKuU2jcekmTqh8bRNPMv0wP0Sc'
@@ -25,12 +25,13 @@ endereco_partida = "Avenida Antonio Ortega, 3604 - Pinhal, Cabreúva - SP"
 # Coordenadas geográficas do endereço de partida
 endereco_partida_coords = (-23.0838, -47.1336)  # Exemplo de coordenadas para Cabreúva, SP
 
-# Função para obter coordenadas geográficas de um endereço
-def obter_coordenadas(endereco):
+# Função para obter coordenadas geográficas de um endereço usando a API do Google Maps
+def obter_coordenadas_google(endereco):
     try:
-        location = geolocator.geocode(endereco)
-        if location:
-            return (location.latitude, location.longitude)
+        geocode_result = gmaps.geocode(endereco)
+        if geocode_result:
+            location = geocode_result[0]['geometry']['location']
+            return (location['lat'], location['lng'])
         else:
             st.error(f"Não foi possível obter as coordenadas para o endereço: {endereco}")
             return None
@@ -43,9 +44,9 @@ def calcular_distancia(endereco1, endereco2):
     if endereco1 == endereco_partida:
         coords_1 = endereco_partida_coords
     else:
-        coords_1 = obter_coordenadas(endereco1)
+        coords_1 = obter_coordenadas_google(endereco1)
     
-    coords_2 = obter_coordenadas(endereco2)
+    coords_2 = obter_coordenadas_google(endereco2)
     
     if coords_1 and coords_2:
         distancia = geodesic(coords_1, coords_2).meters
@@ -56,7 +57,7 @@ def calcular_distancia(endereco1, endereco2):
 # Função para criar o grafo do TSP
 def criar_grafo_tsp(pedidos_df):
     G = nx.Graph()
-    enderecos = pedidos_df['Endereço de Entrega'].unique()
+    enderecos = pedidos_df['Endereço Completo'].unique()
     
     # Adicionar o endereço de partida
     G.add_node(endereco_partida)
@@ -126,7 +127,7 @@ def criar_mapa(pedidos_df):
         for _, row in pedidos_df.iterrows():
             folium.Marker(
                 location=[row['Latitude'], row['Longitude']],
-                popup=row['Endereço de Entrega']
+                popup=row['Endereço Completo']
             ).add_to(mapa)
     else:
         st.error("As colunas 'Latitude' e 'Longitude' não foram encontradas no DataFrame.")
@@ -191,7 +192,7 @@ def cadastrar_caminhoes():
 def main():
     st.title("Roteirizador de Pedidos")
     
-       # Opção para cadastrar caminhões
+    # Opção para cadastrar caminhões
     if st.checkbox("Cadastrar Caminhões"):
         cadastrar_caminhoes()
     
@@ -224,10 +225,13 @@ def main():
         # Filtrar caminhões ativos
         caminhoes_df = caminhoes_df[caminhoes_df['Ativo'] == 'Ativo']
         
+        # Concatenar colunas G, H e I para formar o endereço completo
+        pedidos_df['Endereço Completo'] = pedidos_df.apply(lambda row: f"{row['G']} {row['H']} {row['I']}", axis=1)
+        
         # Adicionar colunas de Latitude e Longitude se não existirem
         if 'Latitude' not in pedidos_df.columns or 'Longitude' not in pedidos_df.columns:
-            pedidos_df['Latitude'] = pedidos_df['Endereço de Entrega'].apply(lambda x: obter_coordenadas(x)[0] if obter_coordenadas(x) else None)
-            pedidos_df['Longitude'] = pedidos_df['Endereço de Entrega'].apply(lambda x: obter_coordenadas(x)[1] if obter_coordenadas(x) else None)
+            pedidos_df['Latitude'] = pedidos_df['Endereço Completo'].apply(lambda x: obter_coordenadas_google(x)[0] if obter_coordenadas_google(x) else None)
+            pedidos_df['Longitude'] = pedidos_df['Endereço Completo'].apply(lambda x: obter_coordenadas_google(x)[1] if obter_coordenadas_google(x) else None)
         
         # Processamento dos dados
         pedidos_df = pedidos_df[pedidos_df['Peso dos Itens'] > 0]
@@ -258,7 +262,7 @@ def main():
             melhor_rota, menor_distancia = resolver_tsp_genetico(G)
             st.write(f"Melhor rota TSP: {melhor_rota}")
             st.write(f"Menor distância TSP: {menor_distancia}")
-            pedidos_df['Ordem de Entrega TSP'] = pedidos_df['Endereço de Entrega'].apply(lambda x: melhor_rota.index(x) + 1)
+            pedidos_df['Ordem de Entrega TSP'] = pedidos_df['Endereço Completo'].apply(lambda x: melhor_rota.index(x) + 1)
         
         if rota_vrp:
             melhor_rota_vrp = resolver_vrp(pedidos_df, caminhoes_df, modo_roteirizacao, criterio_otimizacao)
