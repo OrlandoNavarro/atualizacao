@@ -52,7 +52,7 @@ def resolver_vrp(pedidos_df, caminhoes_df):
     pass
 
 # Função para otimizar o aproveitamento da frota usando programação linear
-def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota):
+def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, percentual_pedidos):
     pedidos_df['Nº Carga'] = None
     pedidos_df['Placas'] = None
     carga_numero = 1
@@ -66,6 +66,8 @@ def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota):
         capacidade_caixas = caminhao['Capac. Cx']
         
         pedidos_alocados = pedidos_df[(pedidos_df['Peso dos Itens'] <= capacidade_peso) & (pedidos_df['Qtde. dos Itens'] <= capacidade_caixas)]
+        pedidos_alocados = pedidos_alocados.sample(frac=(percentual_pedidos / 100))
+        
         pedidos_df.loc[pedidos_alocados.index, 'Nº Carga'] = carga_numero
         pedidos_df.loc[pedidos_alocados.index, 'Placas'] = caminhao['Placas']
         
@@ -136,8 +138,11 @@ def main():
         # Definir capacidade da frota
         percentual_frota = st.slider("Capacidade da frota a ser usada (%)", min_value=0, max_value=100, value=100)
         
+        # Definir percentual de pedidos alocados por veículo
+        percentual_pedidos = st.slider("Percentual de pedidos alocados por veículo (%)", min_value=0, max_value=100, value=100)
+        
         # Alocar pedidos nos caminhões respeitando os limites de peso e quantidade de caixas
-        pedidos_df = otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota)
+        pedidos_df = otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, percentual_pedidos)
         
         # Opções de roteirização
         rota_tsp = st.checkbox("Aplicar TSP")
