@@ -186,16 +186,6 @@ def cadastrar_caminhoes():
             caminhoes_df.loc[caminhoes_df['Placas'] == placas_atualizar, 'Ativo'] = novo_status
             caminhoes_df.to_excel("caminhoes_frota.xlsx", index=False)
             st.success("Status do caminhão atualizado com sucesso!")
-
-# Função principal para o painel interativo
-def main():
-    st.title("Roteirizador de Pedidos")
-    
-    # Opção para cadastrar caminhões
-    if st.checkbox("Cadastrar Caminhões"):
-        cadastrar_caminhoes()
-    
-        # Upload do arquivo Excel de Pedidos
     uploaded_pedidos = st.file_uploader("Escolha o arquivo Excel de Pedidos", type=["xlsm"])
     
     if uploaded_pedidos is not None:
@@ -213,11 +203,11 @@ def main():
         colunas_pedidos = ['Nº Carga', 'Placas', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Região Logística', 'Qtde. dos Itens', 'Peso dos Itens']
         colunas_caminhoes = ['Nº Carga', 'Placas', 'Capac. Cx', 'Capac. Kg', 'Descrição Veículo', 'Transportador', 'Ativo']
         
-        if not all(col in pedidos_df.columns for col in colunas_pedidos):
+        if not all(col in pedidos_df.columns for colunas_pedidos):
             st.error("As colunas necessárias não foram encontradas na planilha de pedidos.")
             return
         
-        if not all(col in caminhoes_df.columns for col in colunas_caminhoes):
+        if not all(col in caminhoes_df.columns for colunas_caminhoes):
             st.error("As colunas necessárias não foram encontradas na planilha da frota.")
             return
         
@@ -226,6 +216,9 @@ def main():
         
         # Processamento dos dados
         pedidos_df = pedidos_df[pedidos_df['Peso dos Itens'] > 0]
+        
+        # Adicionar coordenadas ao DataFrame de pedidos
+        pedidos_df = adicionar_coordenadas(pedidos_df)
         
         # Opções de agrupamento por região
         n_clusters = st.slider("Número de regiões para agrupar", min_value=1, max_value=10, value=5)
