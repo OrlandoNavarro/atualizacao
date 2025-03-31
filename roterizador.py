@@ -116,8 +116,8 @@ def main():
     
     if uploaded_pedidos is not None and uploaded_caminhoes is not None:
         # Leitura das planilhas
-        pedidos_df = pd.read_excel(uploaded_pedidos, sheet_name='Pedidos', engine='openpyxl')
-        caminhoes_df = pd.read_excel(uploaded_caminhoes, sheet_name='Caminhoes', engine='openpyxl')
+        pedidos_df = pd.read_excel(uploaded_pedidos, engine='openpyxl')
+        caminhoes_df = pd.read_excel(uploaded_caminhoes, engine='openpyxl')
         
         # Processamento dos dados
         pedidos_df = pedidos_df[pedidos_df['Peso dos Itens'] > 0]
