@@ -1,41 +1,39 @@
-Python 3.13.2 (tags/v3.13.2:4f8bb39, Feb  4 2025, 15:23:48) [MSC v.1942 64 bit (AMD64)] on win32
-Type "help", "copyright", "credits" or "license()" for more information.
->>> import pandas as pd
-... import googlemaps
-... import os
-... import streamlit as st
-... from sklearn.cluster import KMeans
-... from pulp import LpProblem, LpMinimize, LpVariable, lpSum
-... import networkx as nx
-... from itertools import permutations
-... from ortools.constraint_solver import routing_enums_pb2
-... from ortools.constraint_solver import pywrapcp
-... import folium
-... from streamlit_folium import folium_static
-... import streamlit_authenticator as stauth
-... 
-... # Chave da API do Google
-... api_key = 'AIzaSyCOMqaimUuQq0C7IFyo80jhxmCtxBr5Uio'
-... gmaps = googlemaps.Client(key=api_key)
-... 
-... # Configuração de autenticação
-... names = ["Orlando"]
-... usernames = ["orlando"]
-... passwords = ["Picole2024@"]
-... 
-... hashed_passwords = stauth.Hasher(passwords).generate()
-... 
-... authenticator = stauth.Authenticate(names, usernames, hashed_passwords, "app_dashboard", "abcdef", cookie_expiry_days=30)
-... 
-... name, authentication_status, username = authenticator.login("Login", "main")
-... 
-... if authentication_status:
-...     st.title(f"Bem-vindo, {name}!")
-...     
-...     # Função para calcular distância entre dois endereços usando Google Maps
-...     def calcular_distancia(endereco1, endereco2):
-...         result = gmaps.distance_matrix(endereco1, endereco2)
-...         distancia = result['rows'][0]['elements'][0]['distance']['value']
+import pandas as pd
+import googlemaps
+import os
+import streamlit as st
+from sklearn.cluster import KMeans
+from pulp import LpProblem, LpMinimize, LpVariable, lpSum
+import networkx as nx
+from itertools import permutations
+from ortools.constraint_solver import routing_enums_pb2
+from ortools.constraint_solver import pywrapcp
+import folium
+from streamlit_folium import folium_static
+import streamlit_authenticator as stauth
+
+# Chave da API do Google
+api_key = 'AIzaSyCOMqaimUuQq0C7IFyo80jhxmCtxBr5Uio'
+gmaps = googlemaps.Client(key=api_key)
+
+# Configuração de autenticação
+names = ["Orlando"]
+usernames = ["orlando"]
+passwords = ["Picole2024@"]
+
+hashed_passwords = stauth.Hasher(passwords).generate()
+
+authenticator = stauth.Authenticate(names, usernames, hashed_passwords, "app_dashboard", "abcdef", cookie_expiry_days=30)
+
+name, authentication_status, username = authenticator.login("Login", "main")
+
+if authentication_status:
+    st.title(f"Bem-vindo, {name}!")
+    
+    # Função para calcular distância entre dois endereços usando Google Maps
+    def calcular_distancia(endereco1, endereco2):
+        result = gmaps.distance_matrix(endereco1, endereco2)
+        distancia = result['rows'][0]['elements'][0]['distance']['value']
         return distancia
 
     # Função para criar o grafo do TSP
@@ -157,3 +155,4 @@ Type "help", "copyright", "credits" or "license()" for more information.
 elif authentication_status == False:
     st.error("Nome de usuário ou senha incorretos")
 elif authentication_status == None:
+    st.warning("Por favor, insira seu nome de usuário e senha")
