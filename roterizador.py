@@ -20,22 +20,31 @@ geolocator = Nominatim(user_agent="myGeocoder")
 api_key = 'AIzaSyBz5rK-DhKuU2jcekmTqh8bRNPMv0wP0Sc'
 gmaps = googlemaps.Client(key=api_key)
 
-# Endereço de partida fixo
-endereco_partida = "Avenida Antonio Ortega, 3604 - Pinhal, Cabreúva - SP"
+# Coordenadas geográficas do endereço de partida
+endereco_partida_coords = (-23.0838, -47.1336)  # Exemplo de coordenadas para Cabreúva, SP
 
 # Função para obter coordenadas geográficas de um endereço
 def obter_coordenadas(endereco):
-    location = geolocator.geocode(endereco)
-    if location:
-        return (location.latitude, location.longitude)
-    else:
-        st.error(f"Não foi possível obter as coordenadas para o endereço: {endereco}")
+    try:
+        location = geolocator.geocode(endereco)
+        if location:
+            return (location.latitude, location.longitude)
+        else:
+            st.error(f"Não foi possível obter as coordenadas para o endereço: {endereco}")
+            return None
+    except Exception as e:
+        st.error(f"Erro ao tentar obter as coordenadas: {e}")
         return None
 
 # Função para calcular distância entre dois endereços usando a fórmula de Haversine
 def calcular_distancia(endereco1, endereco2):
-    coords_1 = obter_coordenadas(endereco1)
+    if endereco1 == endereco_partida:
+        coords_1 = endereco_partida_coords
+    else:
+        coords_1 = obter_coordenadas(endereco1)
+    
     coords_2 = obter_coordenadas(endereco2)
+    
     if coords_1 and coords_2:
         distancia = geodesic(coords_1, coords_2).meters
         return distancia
@@ -141,8 +150,7 @@ def cadastrar_caminhoes():
         capac_kg = st.number_input("Capacidade em Quilogramas", min_value=0)
         descricao_veiculo = st.text_input("Descrição do Veículo")
         transportador = st.text_input("Transportador")
-        ativo = st.selectbox("Status", ["Ativo", "Inativo"])
-        
+        ativo = st.selectbox("Status", ["Ativo", "Inativo"])        
         submit_button = st.form_submit_button("Cadastrar")
         
         if submit_button:
@@ -193,7 +201,7 @@ def main():
         pedidos_df = pd.read_excel(uploaded_pedidos, engine='openpyxl')
         caminhoes_df = pd.read_excel(uploaded_caminhoes, engine='openpyxl')
         
-             # Verificar se as colunas necessárias estão presentes
+        # Verificar se as colunas necessárias estão presentes
         colunas_pedidos = ['Nº Carga', 'Placas', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Região Logística', 'Qtde. dos Itens', 'Peso dos Itens']
         colunas_caminhoes = ['Nº Carga', 'Placas', 'Capac. Cx', 'Capac. Kg', 'Descrição Veículo', 'Transportador']
         
