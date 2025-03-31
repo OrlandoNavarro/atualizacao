@@ -41,12 +41,16 @@ def obter_coordenadas_google(endereco):
 
 # Função para transformar colunas G, H e I em um único endereço com delimitador e obter coordenadas
 def transformar_e_obter_coordenadas(pedidos_df):
-    # Concatenar colunas G, H e I para formar o endereço completo
-    pedidos_df['Endereço Completo'] = pedidos_df.apply(lambda row: f"{row['G']}, {row['H']}, {row['I']}", axis=1)
-    
-    # Adicionar colunas de Latitude e Longitude
-    pedidos_df['Latitude'] = pedidos_df['Endereço Completo'].apply(lambda x: obter_coordenadas_google(x)[0] if obter_coordenadas_google(x) else None)
-    pedidos_df['Longitude'] = pedidos_df['Endereço Completo'].apply(lambda x: obter_coordenadas_google(x)[1] if obter_coordenadas_google(x) else None)
+    # Verificar se as colunas 'G', 'H' e 'I' existem
+    if all(col in pedidos_df.columns for col in ['G', 'H', 'I']):
+        # Concatenar colunas G, H e I para formar o endereço completo
+        pedidos_df['Endereço Completo'] = pedidos_df.apply(lambda row: f"{row['G']}, {row['H']}, {row['I']}", axis=1)
+        
+        # Adicionar colunas de Latitude e Longitude
+        pedidos_df['Latitude'] = pedidos_df['Endereço Completo'].apply(lambda x: obter_coordenadas_google(x)[0] if obter_coordenadas_google(x) else None)
+        pedidos_df['Longitude'] = pedidos_df['Endereço Completo'].apply(lambda x: obter_coordenadas_google(x)[1] if obter_coordenadas_google(x) else None)
+    else:
+        st.error("As colunas 'G', 'H' e 'I' não foram encontradas no DataFrame.")
     
     return pedidos_df
 
@@ -122,9 +126,7 @@ def resolver_tsp_genetico(G, population_size=100, generations=500, mutation_rate
         childP2 = [item for item in parent2 if item not in childP1]
 
         child = childP1 + childP2
-        return child
-
-    def mutate(route, mutation_rate):
+        return(route, mutation_rate):
         for swapped in range(len(route)):
             if random.random() < mutation_rate:
                 swapWith = int(random.random() * len(route))
