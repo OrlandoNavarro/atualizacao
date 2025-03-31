@@ -187,25 +187,6 @@ def cadastrar_caminhoes():
             caminhoes_df.to_excel("caminhoes_frota.xlsx", index=False)
             st.success("Status do caminhão atualizado com sucesso!")
 
-# Função para adicionar coordenadas ao DataFrame
-def adicionar_coordenadas(pedidos_df):
-    latitudes = []
-    longitudes = []
-    
-    for endereco in pedidos_df['Endereço de Entrega']:
-        coords = obter_coordenadas(endereco)
-        if coords:
-            latitudes.append(coords[0])
-            longitudes.append(coords[1])
-        else:
-            latitudes.append(None)
-            longitudes.append(None)
-    
-    pedidos_df['Latitude'] = latitudes
-    pedidos_df['Longitude'] = longitudes
-    
-    return pedidos_df
-
 # Função principal para o painel interativo
 def main():
     st.title("Roteirizador de Pedidos")
@@ -214,7 +195,7 @@ def main():
     if st.checkbox("Cadastrar Caminhões"):
         cadastrar_caminhoes()
     
-    # Upload do arquivo Excel de Pedidos
+        # Upload do arquivo Excel de Pedidos
     uploaded_pedidos = st.file_uploader("Escolha o arquivo Excel de Pedidos", type=["xlsm"])
     
     if uploaded_pedidos is not None:
@@ -245,9 +226,6 @@ def main():
         
         # Processamento dos dados
         pedidos_df = pedidos_df[pedidos_df['Peso dos Itens'] > 0]
-        
-        # Adicionar coordenadas ao DataFrame de pedidos
-        pedidos_df = adicionar_coordenadas(pedidos_df)
         
         # Opções de agrupamento por região
         n_clusters = st.slider("Número de regiões para agrupar", min_value=1, max_value=10, value=5)
