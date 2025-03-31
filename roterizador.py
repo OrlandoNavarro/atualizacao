@@ -10,10 +10,10 @@ from ortools.constraint_solver import routing_enums_pb2
 from ortools.constraint_solver import pywrapcp
 import folium
 from streamlit_folium import folium_static
-from sklearn.ensemble import RandomForestRegressor
+from googlemaps.exceptions import ApiError
 
 # Chave da API do Google
-api_key = 'AIzaSyCOMqaimUuQq0C7IFyo80jhxmCtxBr5Uio'
+api_key = 'AIzaSyBz5rK-DhKuU2jcekmTqh8bRNPMv0wP0Sc'
 gmaps = googlemaps.Client(key=api_key)
 
 # Endereço de partida fixo
@@ -21,9 +21,13 @@ endereco_partida = "Avenida Antonio Ortega, 3604 - Pinhal, Cabreúva - SP"
 
 # Função para calcular distância entre dois endereços usando Google Maps
 def calcular_distancia(endereco1, endereco2):
-    result = gmaps.distance_matrix(endereco1, endereco2)
-    distancia = result['rows'][0]['elements'][0]['distance']['value']
-    return distancia
+    try:
+        result = gmaps.distance_matrix(endereco1, endereco2)
+        distancia = result['rows'][0]['elements'][0]['distance']['value']
+        return distancia
+    except ApiError as e:
+        st.error(f"Erro na API do Google Maps: {e}")
+        return None
 
 # Função para criar o grafo do TSP
 def criar_grafo_tsp(pedidos_df):
@@ -38,7 +42,8 @@ def criar_grafo_tsp(pedidos_df):
     
     for (endereco1, endereco2) in permutations([endereco_partida] + list(enderecos), 2):
         distancia = calcular_distancia(endereco1, endereco2)
-        G.add_edge(endereco1, endereco2, weight=distancia)
+        if distancia is not None:
+            G.add_edge(endereco1, endereco2, weight=distancia)
     
     return G
 
@@ -133,7 +138,7 @@ def main():
         pedidos_df = pedidos_df[pedidos_df['Peso dos Itens'] > 0]
         
         # Opções de agrupamento por região
-        n_clusters = st.slider("Número de regiões para agrupar", min_value=0, max_value=10, value=5)
+        n_clusters = st.slider("Número de regiões para agrupar", min_value=1, max_value=10, value=5)
         pedidos_df = agrupar_por_regiao(pedidos_df, n_clusters)
         
         # Definir capacidade da frota
