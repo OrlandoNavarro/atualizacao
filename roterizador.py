@@ -193,9 +193,9 @@ def main():
         pedidos_df = pd.read_excel(uploaded_pedidos, engine='openpyxl')
         caminhoes_df = pd.read_excel(uploaded_caminhoes, engine='openpyxl')
         
-                # Verificar se as colunas necessárias estão presentes
+             # Verificar se as colunas necessárias estão presentes
         colunas_pedidos = ['Nº Carga', 'Placas', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Região Logística', 'Qtde. dos Itens', 'Peso dos Itens']
-        colunas_caminhoes = ['Nº Carga', 'Placas', 'Capac. Cx', 'Capac. Kg', 'Descrição Veículo', 'Transportador', 'Ativo']
+        colunas_caminhoes = ['Nº Carga', 'Placas', 'Capac. Cx', 'Capac. Kg', 'Descrição Veículo', 'Transportador']
         
         if not all(col in pedidos_df.columns for col in colunas_pedidos):
             st.error("As colunas necessárias não foram encontradas na planilha de pedidos.")
@@ -204,6 +204,18 @@ def main():
         if not all(col in caminhoes_df.columns for col in colunas_caminhoes):
             st.error("As colunas necessárias não foram encontradas na planilha da frota.")
             return
+        
+        # Adicionar coluna 'Ativo' ao DataFrame de caminhões
+        caminhoes_df['Ativo'] = 'Ativo'
+        
+        # Salvar os dados da frota no banco de dados
+        try:
+            frota_existente_df = pd.read_excel("caminhoes_frota.xlsx", engine='openpyxl')
+            caminhoes_df = pd.concat([frota_existente_df, caminhoes_df]).drop_duplicates(subset=['Placas'], keep='last')
+        except FileNotFoundError:
+            pass
+        
+        caminhoes_df.to_excel("caminhoes_frota.xlsx", index=False)
         
         # Filtrar caminhões ativos
         caminhoes_df = caminhoes_df[caminhoes_df['Ativo'] == 'Ativo']
