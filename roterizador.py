@@ -75,6 +75,7 @@ def criar_grafo_tsp(pedidos_df):
 def resolver_tsp_genetico(G):
     # Implementação do algoritmo genético para TSP
     pass
+
 # Função para resolver o VRP usando OR-Tools
 def resolver_vrp(pedidos_df, caminhoes_df, modo_roteirizacao, criterio_otimizacao):
     # Implementação do VRP usando OR-Tools
@@ -125,7 +126,7 @@ def criar_mapa(pedidos_df):
         for _, row in pedidos_df.iterrows():
             folium.Marker(
                 location=[row['Latitude'], row['Longitude']],
-                popup=row['Endereço de Entrega']
+                popup=row['Endereço Completo']
             ).add_to(mapa)
     else:
         st.error("As colunas 'Latitude' e 'Longitude' não foram encontradas no DataFrame.")
@@ -175,10 +176,6 @@ def cadastrar_caminhoes():
 def main():
     st.title("Roteirizador de Pedidos")
     
-    # Opção para cadastrar caminhões
-    if st.checkbox("Cadastrar Caminhões"):
-        cadastrar_caminhoes()
-    
     # Upload do arquivo Excel de Pedidos
     uploaded_pedidos = st.file_uploader("Escolha o arquivo Excel de Pedidos", type=["xlsx", "xlsm"])
     
@@ -215,61 +212,67 @@ def main():
         # Filtrar caminhões ativos
         caminhoes_df = caminhoes_df[caminhoes_df['Disponível'] == 'Ativo']
         
-        # Processamento dos dados
-        pedidos_df = pedidos_df[pedidos_df['Peso dos Itens'] > 0]
-        
-        # Opções de agrupamento por região
-        n_clusters = st.slider("Número de regiões para agrupar", min_value=1, max_value=10, value=5)
-        pedidos_df = agrupar_por_regiao(pedidos_df, n_clusters)
-        
-        # Definir capacidade da frota
-        percentual_frota = st.slider("Capacidade da frota a ser usada (%)", min_value=0, max_value=100, value=100)
-        
-        # Definir percentual de pedidos alocados por veículo
-        percentual_pedidos = st.slider("Percentual de pedidos alocados por veículo (%)", min_value=0, max_value=100, value=100)
-        
-        # Parâmetros de roteirização
-        modo_roteirizacao = st.selectbox("Modo de roteirização", ["Frota Mínima", "Balanceado"])
-        criterio_otimizacao = st.selectbox("Critério de otimização", ["Menor Tempo", "Menor Distância", "Menor Custo"])
-        
-        # Alocar pedidos nos caminhões respeitando os limites de peso e quantidade de caixas
-        pedidos_df = otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, percentual_pedidos)
-        
-        # Opções de roteirização
-        rota_tsp = st.checkbox("Aplicar TSP")
-        rota_vrp = st.checkbox("Aplicar VRP")
-        
-        if rota_tsp:
-            G = criar_grafo_tsp(pedidos_df)
-            melhor_rota, menor_distancia = resolver_tsp_genetico(G)
-            st.write(f"Melhor rota TSP: {melhor_rota}")
-            st.write(f"Menor distância TSP: {menor_distancia}")
-            pedidos_df['Ordem de Entrega TSP'] = pedidos_df['Endereço Completo'].apply(lambda x: melhor_rota.index(x) + 1)
-        
-        if rota_vrp:
-            melhor_rota_vrp = resolver_vrp(pedidos_df, caminhoes_df, modo_roteirizacao, criterio_otimizacao)
-            st.write(f"Melhor rota VRP: {melhor_rota_vrp}")
-        
-        # Exibir resultado
-        st.write("Dados dos pedidos:")
-        st.dataframe(pedidos_df)
-        
-        # Criar e exibir mapa
-        mapa = criar_mapa(pedidos_df)
-        folium_static(mapa)
-        
-        # Gerar arquivo Excel com a roteirização feita
-        output_file_path = 'roterizacao_resultado.xlsx'
-        pedidos_df.to_excel(output_file_path, index=False)
-        st.write(f"Arquivo Excel com a roteirização feita foi salvo em: {output_file_path}")
-        
-        # Botão para baixar o arquivo Excel
-        with open(output_file_path, "rb") as file:
-            btn = st.download_button(
-                label="Baixar planilha",
-                data=file,
-                file_name="roterizacao_resultado.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
+        # Mostrar opções de roteirização após o upload da planilha
+        if st.button("Roteirizar"):
+            # Processamento dos dados
+            pedidos_df = pedidos_df[pedidos_df['Peso dos Itens'] > 0]
+            
+            # Opções de agrupamento por região
+            n_clusters = st.slider("Número de regiões para agrupar", min_value=1, max_value=10, value=5)
+            pedidos_df = agrupar_por_regiao(pedidos_df, n_clusters)
+            
+            # Definir capacidade da frota
+            percentual_frota = st.slider("Capacidade da frota a ser usada (%)", min_value=0, max_value=100, value=100)
+            
+            # Definir percentual de pedidos alocados por veículo
+            percentual_pedidos = st.slider("Percentual de pedidos alocados por veículo (%)", min_value=0, max_value=100, value=100)
+            
+            # Parâmetros de roteirização
+            modo_roteirizacao = st.selectbox("Modo de roteirização", ["Frota Mínima", "Balanceado"])
+            criterio_otimizacao = st.selectbox("Critério de otimização", ["Menor Tempo", "Menor Distância", "Menor Custo"])
+            
+            # Alocar pedidos nos caminhões respeitando os limites de peso e quantidade de caixas
+            pedidos_df = otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, percentual_pedidos)
+            
+            # Opções de roteirização
+            rota_tsp = st.checkbox("Aplicar TSP")
+            rota_vrp = st.checkbox("Aplicar VRP")
+            
+            if rota_tsp:
+                G = criar_grafo_tsp(pedidos_df)
+                melhor_rota, menor_distancia = resolver_tsp_genetico(G)
+                st.write(f"Melhor rota TSP: {melhor_rota}")
+                st.write(f"Menor distância TSP: {menor_distancia}")
+                pedidos_df['Ordem de Entrega TSP'] = pedidos_df['Endereço Completo'].apply(lambda x: melhor_rota.index(x) + 1)
+            
+            if rota_vrp:
+                melhor_rota_vrp = resolver_vrp(pedidos_df, caminhoes_df, modo_roteirizacao, criterio_otimizacao)
+                st.write(f"Melhor rota VRP: {melhor_rota_vrp}")
+            
+            # Exibir resultado
+            st.write("Dados dos pedidos:")
+            st.dataframe(pedidos_df)
+            
+            # Criar e exibir mapa
+            mapa = criar_mapa(pedidos_df)
+            folium_static(mapa)
+            
+            # Gerar arquivo Excel com a roteirização feita
+            output_file_path = 'roterizacao_resultado.xlsx'
+            pedidos_df.to_excel(output_file_path, index=False)
+            st.write(f"Arquivo Excel com a roteirização feita foi salvo em: {output_file_path}")
+            
+            # Botão para baixar o arquivo Excel
+            with open(output_file_path, "rb") as file:
+                btn = st.download_button(
+                    label="Baixar planilha",
+                    data=file,
+                    file_name="roterizacao_resultado.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
+
+    # Opção para cadastrar caminhões
+    if st.checkbox("Cadastrar Caminhões"):
+        cadastrar_caminhoes()
 
 main()
