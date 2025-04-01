@@ -158,7 +158,7 @@ def cadastrar_caminhoes():
         
         # Botão para carregar a frota
         if st.button("Carregar Frota"):
-            caminhoes_df = caminhoes_df.append(novo_caminhoes_df, ignore_index=True)
+            caminhoes_df = pd.concat([caminhoes_df, novo_caminhoes_df], ignore_index=True)
             caminhoes_df.to_excel("caminhoes_frota.xlsx", index=False)
             st.success("Frota carregada com sucesso!")
     
@@ -191,11 +191,11 @@ def main():
         # Verificar se as colunas necessárias estão presentes
         colunas_pedidos = ['Nº Carga', 'Placas', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Região Logística', 'Qtde. dos Itens', 'Peso dos Itens']
         
-                if not all(col in pedidos_df.columns for col in colunas_pedidos):
+        if not all(col in pedidos_df.columns for col in colunas_pedidos):
             st.error("As colunas necessárias não foram encontradas na planilha de pedidos.")
             return
         
-        colunas_caminhoes = ['Placa', 'Transportador', 'Descrição Veículo', 'Capac. Cx', 'Capac. Kg', 'Disponível']
+                colunas_caminhoes = ['Placa', 'Transportador', 'Descrição Veículo', 'Capac. Cx', 'Capac. Kg', 'Disponível']
         if not all(col in caminhoes_df.columns for col in colunas_caminhoes):
             st.error("As colunas necessárias não foram encontradas na planilha da frota.")
             return
