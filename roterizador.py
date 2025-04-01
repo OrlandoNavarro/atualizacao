@@ -144,7 +144,7 @@ def cadastrar_caminhoes():
         caminhoes_df = pd.DataFrame(columns=['Placa', 'Transportador', 'Descrição Veículo', 'Capac. Cx', 'Capac. Kg', 'Disponível'])
     
     # Upload do arquivo Excel de Caminhões
-    uploaded_caminhoes = st.file_uploader("Escolha o arquivo Excel de Caminhões", type=["xlsm"])
+    uploaded_caminhoes = st.file_uploader("Escolha o arquivo Excel de Caminhões", type=["xlsx", "xlsm"])
     
     if uploaded_caminhoes is not None:
         novo_caminhoes_df = pd.read_excel(uploaded_caminhoes, engine='openpyxl')
@@ -175,7 +175,7 @@ def main():
         cadastrar_caminhoes()
     
     # Upload do arquivo Excel de Pedidos
-    uploaded_pedidos = st.file_uploader("Escolha o arquivo Excel de Pedidos", type=["xlsm"])
+    uploaded_pedidos = st.file_uploader("Escolha o arquivo Excel de Pedidos", type=["xlsx", "xlsm"])
     
     if uploaded_pedidos is not None:
         # Leitura das planilhas
@@ -188,13 +188,14 @@ def main():
             st.error("Nenhum caminhão cadastrado. Por favor, cadastre caminhões primeiro.")
             return
         
-               # Verificar se as colunas necessárias estão presentes
+        # Verificar se as colunas necessárias estão presentes
         colunas_pedidos = ['Nº Carga', 'Placas', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Região Logística', 'Qtde. dos Itens', 'Peso dos Itens']
         
-        if not all(col in pedidos_df.columns for col in colunas_pedidos):
+                if not all(col in pedidos_df.columns for col in colunas_pedidos):
             st.error("As colunas necessárias não foram encontradas na planilha de pedidos.")
             return
         
+        colunas_caminhoes = ['Placa', 'Transportador', 'Descrição Veículo', 'Capac. Cx', 'Capac. Kg', 'Disponível']
         if not all(col in caminhoes_df.columns for col in colunas_caminhoes):
             st.error("As colunas necessárias não foram encontradas na planilha da frota.")
             return
