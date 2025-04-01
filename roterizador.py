@@ -176,23 +176,41 @@ def cadastrar_caminhoes():
 def subir_roterizacoes():
     st.title("Upload de Planilhas de Roteirizações")
     
+    # Carregar DataFrame existente ou criar um novo
+    try:
+        roterizacao_df = pd.read_excel("roterizacao_dados.xlsx", engine='openpyxl')
+    except FileNotFoundError:
+        roterizacao_df = pd.DataFrame(columns=['Placa', 'Nº Carga', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Qtde. dos Itens', 'Peso dos Itens'])
+    
     # Upload do arquivo Excel de Roteirizações
     uploaded_roterizacao = st.file_uploader("Escolha o arquivo Excel de Roteirizações", type=["xlsx", "xlsm"])
     
     if uploaded_roterizacao is not None:
-        roterizacao_df = pd.read_excel(uploaded_roterizacao, engine='openpyxl')
+        novo_roterizacao_df = pd.read_excel(uploaded_roterizacao, engine='openpyxl')
         
         # Verificar se as colunas necessárias estão presentes
         colunas_roterizacao = ['Placa', 'Nº Carga', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Qtde. dos Itens', 'Peso dos Itens']
         
-        colunas_faltando = [col for col in colunas_roterizacao if col not in roterizacao_df.columns]
+        colunas_faltando = [col for col in colunas_roterizacao if col not in novo_roterizacao_df.columns]
         if colunas_faltando:
             st.error(f"As seguintes colunas estão faltando na planilha de roteirizações: {', '.join(colunas_faltando)}")
             return
         
-        # Exibir dados da planilha de roteirizações
-        st.subheader("Dados da Roteirização")
-        st.dataframe(roterizacao_df)
+        # Botão para carregar a roteirização
+        if st.button("Carregar Roteirização"):
+            roterizacao_df = pd.concat([roterizacao_df, novo_roterizacao_df], ignore_index=True)
+            roterizacao_df.to_excel("roterizacao_dados.xlsx", index=False)
+            st.success("Roteirização carregada com sucesso!")
+        
+    # Botão para limpar a roteirização
+    if st.button("Limpar Roteirização"):
+        roterizacao_df = pd.DataFrame(columns=colunas_roterizacao)
+        roterizacao_df.to_excel("roterizacao_dados.xlsx", index=False)
+        st.success("Roteirização limpa com sucesso!")
+    
+    # Exibir dados da planilha de roteirizações
+    st.subheader("Dados da Roteirização")
+    st.dataframe(roterizacao_df)
 
 # Função principal para o painel interativo
 def main():
