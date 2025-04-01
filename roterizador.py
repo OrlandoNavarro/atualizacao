@@ -182,7 +182,7 @@ def subir_roterizacoes():
     except FileNotFoundError:
         roterizacao_df = pd.DataFrame(columns=['Placa', 'Nº Carga', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Qtde. dos Itens', 'Peso dos Itens'])
     
-    # Upload do arquivo Excel de Roteirizações
+     # Upload do arquivo Excel de Roteirizações
     uploaded_roterizacao = st.file_uploader("Escolha o arquivo Excel de Roteirizações", type=["xlsx", "xlsm"])
     
     if uploaded_roterizacao is not None:
@@ -227,8 +227,18 @@ def main():
         pedidos_df['Endereço Completo'] = pedidos_df['Endereço de Entrega'] + ', ' + pedidos_df['Bairro de Entrega'] + ', ' + pedidos_df['Cidade de Entrega']
         
         # Obter coordenadas geográficas
-        pedidos_df['Latitude'] = pedidos_df['Endereço Completo'].apply(lambda x: obter_coordenadas(x)[0] if obter_coordenadas(x) else None)
-        pedidos_df['Longitude'] = pedidos_df['Endereço Completo'].apply(lambda x: obter_coordenadas(x)[1] if obter_coordenadas(x) else None)
+        def obter_coordenadas_com_fallback(endereco):
+            coords = obter_coordenadas(endereco)
+            if coords is None:
+                # Coordenadas manuais para endereços específicos
+                coordenadas_manuais = {
+                    "Rua Araújo Leite, 146, Centro, Piedade": (-23.71241093449893, -47.41796911054548)
+                }
+                coords = coordenadas_manuais.get(endereco, (None, None))
+            return coords
+        
+        pedidos_df['Latitude'] = pedidos_df['Endereço Completo'].apply(lambda x: obter_coordenadas_com_fallback(x)[0])
+        pedidos_df['Longitude'] = pedidos_df['Endereço Completo'].apply(lambda x: obter_coordenadas_com_fallback(x)[1])
         
         # Carregar dados da frota cadastrada
         try:
