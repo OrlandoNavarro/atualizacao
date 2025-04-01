@@ -11,10 +11,6 @@ from ortools.constraint_solver import pywrapcp
 import folium
 from streamlit_folium import folium_static
 from geopy.distance import geodesic
-from streamlit_theme import apply_material_theme
-
-# Aplicar o tema Material Design
-apply_material_theme()
 
 # Chave da API do Google Maps
 api_key = 'AIzaSyBpl7-N-RrwTVI6f2k5Kx5jQ0S1FamvNow'
@@ -83,10 +79,10 @@ def resolver_vrp(pedidos_df, caminhoes_df, modo_roteirizacao, criterio_otimizaca
     pass
 
 # Função para otimizar o aproveitamento da frota usando programação linear
-def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, percentual_pedidos, ultimo_numero_carga):
+def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, percentual_pedidos):
     pedidos_df['Nº Carga'] = None
     pedidos_df['Placa'] = None
-    carga_numero = ultimo_numero_carga + 1
+    carga_numero = 1
     
     # Ajustar a capacidade da frota
     caminhoes_df['Capac. Kg'] *= (percentual_frota / 100)
@@ -153,9 +149,8 @@ def cadastrar_caminhoes():
         # Verificar se as colunas necessárias estão presentes
         colunas_caminhoes = ['Placa', 'Transportador', 'Descrição Veículo', 'Capac. Cx', 'Capac. Kg', 'Disponível']
         
-        colunas_faltando_caminhoes = [col for col in colunas_caminhoes if col not in novo_caminhoes_df.columns]
-        if colunas_faltando_caminhoes:
-            st.error(f"As seguintes colunas estão faltando na planilha de caminhões: {', '.join(colunas_faltando_caminhoes)}")
+        if not all(col in novo_caminhoes_df.columns for col in colunas_caminhoes):
+            st.error("As colunas necessárias não foram encontradas na planilha de caminhões.")
             return
         
         # Botão para carregar a frota
@@ -184,7 +179,7 @@ def subir_roterizacoes():
     except FileNotFoundError:
         roterizacao_df = pd.DataFrame(columns=['Placa', 'Nº Carga', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Qtde. dos Itens', 'Peso dos Itens'])
     
-    # Upload do arquivo Excel de Roteirizações
+        # Upload do arquivo Excel de Roteirizações
     uploaded_roterizacao = st.file_uploader("Escolha o arquivo Excel de Roteirizações", type=["xlsx", "xlsm"])
     
     if uploaded_roterizacao is not None:
@@ -285,11 +280,8 @@ def main():
             modo_roteirizacao = st.selectbox("Modo de roteirização", ["Frota Mínima", "Balanceado"])
             criterio_otimizacao = st.selectbox("Critério de otimização", ["Menor Tempo", "Menor Distância", "Menor Custo"])
             
-            # Obter o último número de carga das planilhas de roteirização
-            ultimo_numero_carga = roterizacao_df['Nº Carga'].max() if not roterizacao_df.empty else 0
-            
             # Alocar pedidos nos caminhões respeitando os limites de peso e quantidade de caixas
-            pedidos_df = otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, percentual_pedidos, ultimo_numero_carga)
+            pedidos_df = otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, percentual_pedidos)
             
             # Opções de roteirização
             rota_tsp = st.checkbox("Aplicar TSP")
