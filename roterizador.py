@@ -10,14 +10,10 @@ from ortools.constraint_solver import routing_enums_pb2
 from ortools.constraint_solver import pywrapcp
 import folium
 from streamlit_folium import folium_static
-from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
 
-# Inicializar o geolocalizador
-geolocator = Nominatim(user_agent="myGeocoder")
-
-# Chave da API do Google
-api_key = 'AIzaSyBz5rK-DhKuU2jcekmTqh8bRNPMv0wP0Sc'
+# Chave da API do Google Maps
+api_key = 'AIzaSyBpl7-N-RrwTVI6f2k5Kx5jQ0S1FamvNow'
 gmaps = googlemaps.Client(key=api_key)
 
 # Endereço de partida fixo
@@ -25,12 +21,13 @@ endereco_partida = "Avenida Antonio Ortega, 3604 - Pinhal, Cabreúva - SP"
 # Coordenadas geográficas do endereço de partida
 endereco_partida_coords = (-23.0838, -47.1336)  # Exemplo de coordenadas para Cabreúva, SP
 
-# Função para obter coordenadas geográficas de um endereço
-def obter_coordenadas(endereco):
+# Função para obter coordenadas geográficas de um endereço usando Google Maps API
+def obter_coordenadas_google(endereco):
     try:
-        location = geolocator.geocode(endereco)
-        if location:
-            return (location.latitude, location.longitude)
+        geocode_result = gmaps.geocode(endereco)
+        if geocode_result:
+            location = geocode_result[0]['geometry']['location']
+            return (location['lat'], location['lng'])
         else:
             st.error(f"Não foi possível obter as coordenadas para o endereço: {endereco}")
             return None
@@ -43,9 +40,9 @@ def calcular_distancia(endereco1, endereco2):
     if endereco1 == endereco_partida:
         coords_1 = endereco_partida_coords
     else:
-        coords_1 = obter_coordenadas(endereco1)
+        coords_1 = obter_coordenadas_google(endereco1)
     
-    coords_2 = obter_coordenadas(endereco2)
+    coords_2 = obter_coordenadas_google(endereco2)
     
     if coords_1 and coords_2:
         distancia = geodesic(coords_1, coords_2).meters
@@ -148,6 +145,45 @@ def cadastrar_caminhoes():
     
     if uploaded_caminhoes is not None:
         novo_caminhoes_df = pd.read_excel(uploaded_caminhoes, engine='openpyxl')
+        
+        # Verificar se as colunas necessárias estão presentes
+        colunas_caminhoes = ['Placa', 'Transportador', 'Descrição Veículo', 'Capac. Cx', 'Capac. Kg', 'Disponível']
+        
+        if not all(col in novo_caminhoes_df.columns for col in colunas_caminhoes):
+            st.error("As colunas necessárias não foram encontradas na planilha de caminhões.")
+            return
+        
+        # Botão para carregar a frota
+        if st.button("Carregar Frota"):
+            caminhoes_df = pd.concat([caminhoes_df, novo_caminhoes_df], ignore_index=True)
+            caminhoes_df.to_excel("caminhoes_frota.xlsx", index=False)
+            st.success("Frota carregada com sucesso!")
+
+    # Botão para limpar a frota
+    if st.button("Limpar Frota"):
+        caminhoes_df = pd.DataFrame(columns=['Placa', 'Transportador', 'Descrição Veículo', 'Capac. Cx', 'Capac. Kg', 'Disponível'])
+        caminhoes_df.to_excel("caminhoes_frota.xlsx", index=False)
+        st.success("Frota limpa com sucesso!")
+    
+    # Exibir caminhões cadastrados
+    st.subheader("Caminhões Cadastrados")
+    st.dataframe(caminhoes_df)
+
+# Função para subir planilhas de roteirizações
+def subir_roterizacoes():
+    st.title("Upload de Planilhas de Roteirizações")
+    
+    # Carregar DataFrame existente ou criar um novo
+    try:
+        roterizacao_df = pd.read_excel("roterizacao_dados.xlsx", engine='openpyxl')
+    except FileNotFoundError:
+        roterizacao_df = pd.DataFrame(columns=['Placa', 'Nº Carga', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Qtde. dos Itens', 'Peso dos Itens'])
+    
+    # Upload do arquivo Excel de Roteirizações
+    uploaded_roterizacao = st.file_uploader("Escolha o arquivo Excel de Roteirizações", type=["xlsx", "xlsm"])
+    
+    if uploaded_roterizacao is not None:
+        novo_roterizacao_df = pd.read_excel(uploaded_roterizacao, engine='openpyxl')
         
         # Verificar se as colunas necessárias estão presentes
         colunas_caminhoes = ['Placa', 'Transportador', 'Descrição Veículo', 'Capac. Cx', 'Capac. Kg', 'Disponível']
