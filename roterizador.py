@@ -84,7 +84,7 @@ def resolver_vrp(pedidos_df, caminhoes_df, modo_roteirizacao, criterio_otimizaca
 # Função para otimizar o aproveitamento da frota usando programação linear
 def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, percentual_pedidos):
     pedidos_df['Nº Carga'] = None
-    pedidos_df['Placas'] = None
+    pedidos_df['Placa'] = None
     carga_numero = 1
     
     # Ajustar a capacidade da frota
@@ -99,7 +99,7 @@ def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, pe
         pedidos_alocados = pedidos_alocados.sample(frac=(percentual_pedidos / 100))
         
         pedidos_df.loc[pedidos_alocados.index, 'Nº Carga'] = carga_numero
-        pedidos_df.loc[pedidos_alocados.index, 'Placas'] = caminhao['Placas']
+        pedidos_df.loc[pedidos_alocados.index, 'Placa'] = caminhao['Placa']
         
         capacidade_peso -= pedidos_alocados['Peso dos Itens'].sum()
         capacidade_caixas -= pedidos_alocados['Qtde. dos Itens'].sum()
@@ -162,6 +162,12 @@ def cadastrar_caminhoes():
             caminhoes_df.to_excel("caminhoes_frota.xlsx", index=False)
             st.success("Frota carregada com sucesso!")
     
+    # Botão para limpar a frota
+    if st.button("Limpar Frota"):
+        caminhoes_df = pd.DataFrame(columns=['Placa', 'Transportador', 'Descrição Veículo', 'Capac. Cx', 'Capac. Kg', 'Disponível'])
+        caminhoes_df.to_excel("caminhoes_frota.xlsx", index=False)
+        st.success("Frota limpa com sucesso!")
+    
     # Exibir caminhões cadastrados
     st.subheader("Caminhões Cadastrados")
     st.dataframe(caminhoes_df)
@@ -189,7 +195,7 @@ def main():
             return
         
         # Verificar se as colunas necessárias estão presentes
-        colunas_pedidos = ['Nº Carga', 'Placas', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Região Logística', 'Qtde. dos Itens', 'Peso dos Itens']
+                colunas_pedidos = ['Nº Carga', 'Placa', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Região Logística', 'Qtde. dos Itens', 'Peso dos Itens']
         
         if not all(col in pedidos_df.columns for col in colunas_pedidos):
             st.error("As colunas necessárias não foram encontradas na planilha de pedidos.")
