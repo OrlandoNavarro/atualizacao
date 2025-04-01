@@ -37,6 +37,7 @@ def obter_coordenadas(endereco):
     except Exception as e:
         st.error(f"Erro ao tentar obter as coordenadas: {e}")
         return None
+
 # Função para calcular distância entre dois endereços usando a fórmula de Haversine
 def calcular_distancia(endereco1, endereco2):
     if endereco1 == endereco_partida:
@@ -181,8 +182,8 @@ def subir_roterizacoes():
     if uploaded_roterizacao is not None:
         roterizacao_df = pd.read_excel(uploaded_roterizacao, engine='openpyxl')
         
-               # Verificar se as colunas necessárias estão presentes
-        colunas_roterizacao = ['Placa', 'Nº Carga', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Região Logística', 'Qtde. dos Itens', 'Peso dos Itens']
+        # Verificar se as colunas necessárias estão presentes
+        colunas_roterizacao = ['Placa', 'Nº Carga', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Qtde. dos Itens', 'Peso dos Itens']
         
         if not all(col in roterizacao_df.columns for col in colunas_roterizacao):
             st.error("As colunas necessárias não foram encontradas na planilha de roteirizações.")
