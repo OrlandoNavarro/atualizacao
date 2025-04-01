@@ -56,7 +56,7 @@ def calcular_distancia(endereco1, endereco2):
 # Função para criar o grafo do TSP
 def criar_grafo_tsp(pedidos_df):
     G = nx.Graph()
-    enderecos = pedidos_df['Endereço de Entrega'].unique()
+    enderecos = pedidos_df['Endereço Completo'].unique()
     
     # Adicionar o endereço de partida
     G.add_node(endereco_partida)
@@ -75,7 +75,6 @@ def criar_grafo_tsp(pedidos_df):
 def resolver_tsp_genetico(G):
     # Implementação do algoritmo genético para TSP
     pass
-
 # Função para resolver o VRP usando OR-Tools
 def resolver_vrp(pedidos_df, caminhoes_df, modo_roteirizacao, criterio_otimizacao):
     # Implementação do VRP usando OR-Tools
@@ -187,6 +186,13 @@ def main():
         # Leitura das planilhas
         pedidos_df = pd.read_excel(uploaded_pedidos, engine='openpyxl')
         
+        # Formar o endereço completo
+        pedidos_df['Endereço Completo'] = pedidos_df['Endereço de Entrega'] + ', ' + pedidos_df['Bairro de Entrega'] + ', ' + pedidos_df['Cidade de Entrega']
+        
+               # Obter coordenadas geográficas
+        pedidos_df['Latitude'] = pedidos_df['Endereço Completo'].apply(lambda x: obter_coordenadas(x)[0] if obter_coordenadas(x) else None)
+        pedidos_df['Longitude'] = pedidos_df['Endereço Completo'].apply(lambda x: obter_coordenadas(x)[1] if obter_coordenadas(x) else None)
+        
         # Carregar dados da frota cadastrada
         try:
             caminhoes_df = pd.read_excel("caminhoes_frota.xlsx", engine='openpyxl')
@@ -194,7 +200,7 @@ def main():
             st.error("Nenhum caminhão cadastrado. Por favor, cadastre caminhões primeiro.")
             return
         
-                # Verificar se as colunas necessárias estão presentes
+        # Verificar se as colunas necessárias estão presentes
         colunas_pedidos = ['Nº Carga', 'Placa', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Região Logística', 'Qtde. dos Itens', 'Peso dos Itens']
         
         if not all(col in pedidos_df.columns for col in colunas_pedidos):
@@ -238,7 +244,7 @@ def main():
             melhor_rota, menor_distancia = resolver_tsp_genetico(G)
             st.write(f"Melhor rota TSP: {melhor_rota}")
             st.write(f"Menor distância TSP: {menor_distancia}")
-            pedidos_df['Ordem de Entrega TSP'] = pedidos_df['Endereço de Entrega'].apply(lambda x: melhor_rota.index(x) + 1)
+            pedidos_df['Ordem de Entrega TSP'] = pedidos_df['Endereço Completo'].apply(lambda x: melhor_rota.index(x) + 1)
         
         if rota_vrp:
             melhor_rota_vrp = resolver_vrp(pedidos_df, caminhoes_df, modo_roteirizacao, criterio_otimizacao)
