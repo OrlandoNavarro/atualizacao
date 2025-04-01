@@ -172,11 +172,25 @@ def cadastrar_caminhoes():
     st.subheader("Caminhões Cadastrados")
     st.dataframe(caminhoes_df)
 
+# Função para subir planilhas de roteirizações
+def subir_roterizacoes():
+    st.title("Upload de Planilhas de Roteirizações")
+    
+    # Upload do arquivo Excel de Roteirizações
+    uploaded_roterizacao = st.file_uploader("Escolha o arquivo Excel de Roteirizações", type=["xlsx", "xlsm"])
+    
+    if uploaded_roterizacao is not None:
+        roterizacao_df = pd.read_excel(uploaded_roterizacao, engine='openpyxl')
+        
+        # Exibir dados da planilha de roteirizações
+        st.subheader("Dados da Roteirização")
+        st.dataframe(roterizacao_df)
+
 # Função principal para o painel interativo
 def main():
     st.title("Roteirizador de Pedidos")
     
-    # Upload do arquivo Excel de Pedidos
+        # Upload do arquivo Excel de Pedidos
     uploaded_pedidos = st.file_uploader("Escolha o arquivo Excel de Pedidos", type=["xlsx", "xlsm"])
     
     if uploaded_pedidos is not None:
@@ -186,7 +200,7 @@ def main():
         # Formar o endereço completo
         pedidos_df['Endereço Completo'] = pedidos_df['Endereço de Entrega'] + ', ' + pedidos_df['Bairro de Entrega'] + ', ' + pedidos_df['Cidade de Entrega']
         
-                # Obter coordenadas geográficas
+        # Obter coordenadas geográficas
         pedidos_df['Latitude'] = pedidos_df['Endereço Completo'].apply(lambda x: obter_coordenadas(x)[0] if obter_coordenadas(x) else None)
         pedidos_df['Longitude'] = pedidos_df['Endereço Completo'].apply(lambda x: obter_coordenadas(x)[1] if obter_coordenadas(x) else None)
         
@@ -275,15 +289,8 @@ def main():
     if st.checkbox("Cadastrar Caminhões"):
         cadastrar_caminhoes()
     
-    # Upload do arquivo Excel de Roteirizações
-    uploaded_roterizacao = st.file_uploader("Escolha o arquivo Excel de Roteirizações", type=["xlsx", "xlsm"])
-    
-    if uploaded_roterizacao is not None:
-        # Leitura da planilha de roteirizações
-        roterizacao_df = pd.read_excel(uploaded_roterizacao, engine='openpyxl')
-        
-        # Exibir dados da planilha de roteirizações
-        st.write("Dados da Roteirização:")
-        st.dataframe(roterizacao_df)
+    # Opção para subir planilhas de roteirizações
+    if st.checkbox("Subir Planilhas de Roteirizações"):
+        subir_roterizacoes()
 
 main()
