@@ -186,7 +186,7 @@ def subir_roterizacoes():
         novo_roterizacao_df = pd.read_excel(uploaded_roterizacao, engine='openpyxl')
         
         # Verificar se as colunas necessárias estão presentes
-                colunas_roterizacao = ['Placa', 'Nº Carga', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Qtde. dos Itens', 'Peso dos Itens']
+        colunas_roterizacao = ['Placa', 'Nº Carga', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Qtde. dos Itens', 'Peso dos Itens']
         
         colunas_faltando = [col for col in colunas_roterizacao if col not in novo_roterizacao_df.columns]
         if colunas_faltando:
