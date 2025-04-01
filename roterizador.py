@@ -185,8 +185,9 @@ def subir_roterizacoes():
         # Verificar se as colunas necessárias estão presentes
         colunas_roterizacao = ['Placa', 'Nº Carga', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Qtde. dos Itens', 'Peso dos Itens']
         
-        if not all(col in roterizacao_df.columns for col in colunas_roterizacao):
-            st.error("As colunas necessárias não foram encontradas na planilha de roteirizações.")
+        colunas_faltando = [col for col in colunas_roterizacao if col not in roterizacao_df.columns]
+        if colunas_faltando:
+            st.error(f"As seguintes colunas estão faltando na planilha de roteirizações: {', '.join(colunas_faltando)}")
             return
         
         # Exibir dados da planilha de roteirizações
