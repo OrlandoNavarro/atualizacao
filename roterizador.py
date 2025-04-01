@@ -141,51 +141,30 @@ def cadastrar_caminhoes():
     try:
         caminhoes_df = pd.read_excel("caminhoes_frota.xlsx", engine='openpyxl')
     except FileNotFoundError:
-        caminhoes_df = pd.DataFrame(columns=['Nº Carga', 'Placas', 'Capac. Cx', 'Capac. Kg', 'Descrição Veículo', 'Transportador', 'Ativo'])
+        caminhoes_df = pd.DataFrame(columns=['Placa', 'Transportador', 'Descrição Veículo', 'Capac. Cx', 'Capac. Kg', 'Disponível'])
     
-    # Formulário para cadastrar novo caminhão
-    with st.form("cadastrar_caminhao"):
-        st.subheader("Cadastrar Novo Caminhão")
-        num_carga = st.text_input("Número de Carga")
-        placas = st.text_input("Placas")
-        capac_cx = st.number_input("Capacidade em Caixas", min_value=0)
-        capac_kg = st.number_input("Capacidade em Quilogramas", min_value=0)
-        descricao_veiculo = st.text_input("Descrição do Veículo")
-        transportador = st.text_input("Transportador")
-        ativo = st.selectbox("Status", ["Ativo", "Inativo"])
+    # Upload do arquivo Excel de Caminhões
+    uploaded_caminhoes = st.file_uploader("Escolha o arquivo Excel de Caminhões", type=["xlsm"])
+    
+    if uploaded_caminhoes is not None:
+        novo_caminhoes_df = pd.read_excel(uploaded_caminhoes, engine='openpyxl')
         
-        submit_button = st.form_submit_button("Cadastrar")
+        # Verificar se as colunas necessárias estão presentes
+        colunas_caminhoes = ['Placa', 'Transportador', 'Descrição Veículo', 'Capac. Cx', 'Capac. Kg', 'Disponível']
         
-        if submit_button:
-            novo_caminhao = {
-                'Nº Carga': num_carga,
-                'Placas': placas,
-                'Capac. Cx': capac_cx,
-                'Capac. Kg': capac_kg,
-                'Descrição Veículo': descricao_veiculo,
-                'Transportador': transportador,
-                'Ativo': ativo
-            }
-            caminhoes_df = caminhoes_df.append(novo_caminhao, ignore_index=True)
+        if not all(col in novo_caminhoes_df.columns for col in colunas_caminhoes):
+            st.error("As colunas necessárias não foram encontradas na planilha de caminhões.")
+            return
+        
+        # Botão para carregar a frota
+        if st.button("Carregar Frota"):
+            caminhoes_df = caminhoes_df.append(novo_caminhoes_df, ignore_index=True)
             caminhoes_df.to_excel("caminhoes_frota.xlsx", index=False)
-            st.success("Caminhão cadastrado com sucesso!")
+            st.success("Frota carregada com sucesso!")
     
     # Exibir caminhões cadastrados
     st.subheader("Caminhões Cadastrados")
     st.dataframe(caminhoes_df)
-    
-    # Formulário para atualizar status de caminhão
-    with st.form("atualizar_status"):
-        st.subheader("Atualizar Status de Caminhão")
-        placas_atualizar = st.selectbox("Selecione a Placa do Caminhão", caminhoes_df['Placas'].unique())
-        novo_status = st.selectbox("Novo Status", ["Ativo", "Inativo"])
-        
-        atualizar_button = st.form_submit_button("Atualizar Status")
-        
-        if atualizar_button:
-            caminhoes_df.loc[caminhoes_df['Placas'] == placas_atualizar, 'Ativo'] = novo_status
-            caminhoes_df.to_excel("caminhoes_frota.xlsx", index=False)
-            st.success("Status do caminhão atualizado com sucesso!")
 
 # Função principal para o painel interativo
 def main():
@@ -195,7 +174,7 @@ def main():
     if st.checkbox("Cadastrar Caminhões"):
         cadastrar_caminhoes()
     
-        # Upload do arquivo Excel de Pedidos
+    # Upload do arquivo Excel de Pedidos
     uploaded_pedidos = st.file_uploader("Escolha o arquivo Excel de Pedidos", type=["xlsm"])
     
     if uploaded_pedidos is not None:
@@ -209,9 +188,8 @@ def main():
             st.error("Nenhum caminhão cadastrado. Por favor, cadastre caminhões primeiro.")
             return
         
-        # Verificar se as colunas necessárias estão presentes
+               # Verificar se as colunas necessárias estão presentes
         colunas_pedidos = ['Nº Carga', 'Placas', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Região Logística', 'Qtde. dos Itens', 'Peso dos Itens']
-        colunas_caminhoes = ['Nº Carga', 'Placas', 'Capac. Cx', 'Capac. Kg', 'Descrição Veículo', 'Transportador', 'Ativo']
         
         if not all(col in pedidos_df.columns for col in colunas_pedidos):
             st.error("As colunas necessárias não foram encontradas na planilha de pedidos.")
@@ -222,7 +200,7 @@ def main():
             return
         
         # Filtrar caminhões ativos
-        caminhoes_df = caminhoes_df[caminhoes_df['Ativo'] == 'Ativo']
+        caminhoes_df = caminhoes_df[caminhoes_df['Disponível'] == 'Ativo']
         
         # Processamento dos dados
         pedidos_df = pedidos_df[pedidos_df['Peso dos Itens'] > 0]
