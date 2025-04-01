@@ -24,7 +24,6 @@ gmaps = googlemaps.Client(key=api_key)
 endereco_partida = "Avenida Antonio Ortega, 3604 - Pinhal, Cabreúva - SP"
 # Coordenadas geográficas do endereço de partida
 endereco_partida_coords = (-23.0838, -47.1336)  # Exemplo de coordenadas para Cabreúva, SP
-
 # Função para obter coordenadas geográficas de um endereço
 def obter_coordenadas(endereco):
     try:
@@ -161,7 +160,7 @@ def cadastrar_caminhoes():
             caminhoes_df = pd.concat([caminhoes_df, novo_caminhoes_df], ignore_index=True)
             caminhoes_df.to_excel("caminhoes_frota.xlsx", index=False)
             st.success("Frota carregada com sucesso!")
-    
+
     # Botão para limpar a frota
     if st.button("Limpar Frota"):
         caminhoes_df = pd.DataFrame(columns=['Placa', 'Transportador', 'Descrição Veículo', 'Capac. Cx', 'Capac. Kg', 'Disponível'])
@@ -182,7 +181,14 @@ def subir_roterizacoes():
     if uploaded_roterizacao is not None:
         roterizacao_df = pd.read_excel(uploaded_roterizacao, engine='openpyxl')
         
-        # Exibir dados da planilha de roteirizações
+        # Verificar se as colunas necessárias estão presentes
+        colunas_roterizacao = ['Placa', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Região Logística', 'Qtde. dos Itens', 'Peso dos Itens']
+        
+        if not all(col in roterizacao_df.columns for col in colunas_roterizacao):
+            st.error("As colunas necessárias não foram encontradas na planilha de roteirizações.")
+            return
+        
+                # Exibir dados da planilha de roteirizações
         st.subheader("Dados da Roteirização")
         st.dataframe(roterizacao_df)
 
@@ -190,7 +196,7 @@ def subir_roterizacoes():
 def main():
     st.title("Roteirizador de Pedidos")
     
-        # Upload do arquivo Excel de Pedidos
+    # Upload do arquivo Excel de Pedidos
     uploaded_pedidos = st.file_uploader("Escolha o arquivo Excel de Pedidos", type=["xlsx", "xlsm"])
     
     if uploaded_pedidos is not None:
