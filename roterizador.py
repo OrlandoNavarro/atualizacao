@@ -186,46 +186,7 @@ def subir_roterizacoes():
         novo_roterizacao_df = pd.read_excel(uploaded_roterizacao, engine='openpyxl')
         
         # Verificar se as colunas necessárias estão presentes
-        colunas_caminhoes = ['Placa', 'Transportador', 'Descrição Veículo', 'Capac. Cx', 'Capac. Kg', 'Disponível']
-        
-        if not all(col in novo_caminhoes_df.columns for col in colunas_caminhoes):
-            st.error("As colunas necessárias não foram encontradas na planilha de caminhões.")
-            return
-        
-        # Botão para carregar a frota
-        if st.button("Carregar Frota"):
-            caminhoes_df = pd.concat([caminhoes_df, novo_caminhoes_df], ignore_index=True)
-            caminhoes_df.to_excel("caminhoes_frota.xlsx", index=False)
-            st.success("Frota carregada com sucesso!")
-
-    # Botão para limpar a frota
-    if st.button("Limpar Frota"):
-        caminhoes_df = pd.DataFrame(columns=['Placa', 'Transportador', 'Descrição Veículo', 'Capac. Cx', 'Capac. Kg', 'Disponível'])
-        caminhoes_df.to_excel("caminhoes_frota.xlsx", index=False)
-        st.success("Frota limpa com sucesso!")
-    
-    # Exibir caminhões cadastrados
-    st.subheader("Caminhões Cadastrados")
-    st.dataframe(caminhoes_df)
-
-# Função para subir planilhas de roteirizações
-def subir_roterizacoes():
-    st.title("Upload de Planilhas de Roteirizações")
-    
-    # Carregar DataFrame existente ou criar um novo
-    try:
-        roterizacao_df = pd.read_excel("roterizacao_dados.xlsx", engine='openpyxl')
-    except FileNotFoundError:
-        roterizacao_df = pd.DataFrame(columns=['Placa', 'Nº Carga', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Qtde. dos Itens', 'Peso dos Itens'])
-    
-     # Upload do arquivo Excel de Roteirizações
-    uploaded_roterizacao = st.file_uploader("Escolha o arquivo Excel de Roteirizações", type=["xlsx", "xlsm"])
-    
-    if uploaded_roterizacao is not None:
-        novo_roterizacao_df = pd.read_excel(uploaded_roterizacao, engine='openpyxl')
-        
-        # Verificar se as colunas necessárias estão presentes
-        colunas_roterizacao = ['Placa', 'Nº Carga', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Qtde. dos Itens', 'Peso dos Itens']
+                colunas_roterizacao = ['Placa', 'Nº Carga', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Qtde. dos Itens', 'Peso dos Itens']
         
         colunas_faltando = [col for col in colunas_roterizacao if col not in novo_roterizacao_df.columns]
         if colunas_faltando:
@@ -264,7 +225,7 @@ def main():
         
         # Obter coordenadas geográficas
         def obter_coordenadas_com_fallback(endereco):
-            coords = obter_coordenadas(endereco)
+            coords = obter_coordenadas_google(endereco)
             if coords is None:
                 # Coordenadas manuais para endereços específicos
                 coordenadas_manuais = {
