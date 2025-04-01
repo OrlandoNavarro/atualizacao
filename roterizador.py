@@ -185,7 +185,7 @@ def subir_roterizacoes():
     if uploaded_roterizacao is not None:
         novo_roterizacao_df = pd.read_excel(uploaded_roterizacao, engine='openpyxl')
         
-        # Verificar se as colunas necessárias estão presentes
+                # Verificar se as colunas necessárias estão presentes
         colunas_roterizacao = ['Placa', 'Nº Carga', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Qtde. dos Itens', 'Peso dos Itens']
         
         colunas_faltando = [col for col in colunas_roterizacao if col not in novo_roterizacao_df.columns]
@@ -247,13 +247,15 @@ def main():
         # Verificar se as colunas necessárias estão presentes
         colunas_pedidos = ['Nº Carga', 'Placa', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Região Logística', 'Qtde. dos Itens', 'Peso dos Itens']
         
-        if not all(col in pedidos_df.columns for col in colunas_pedidos):
-            st.error("As colunas necessárias não foram encontradas na planilha de pedidos.")
+        colunas_faltando_pedidos = [col for col in colunas_pedidos if col not in pedidos_df.columns]
+        if colunas_faltando_pedidos:
+            st.error(f"As seguintes colunas estão faltando na planilha de pedidos: {', '.join(colunas_faltando_pedidos)}")
             return
         
         colunas_caminhoes = ['Placa', 'Transportador', 'Descrição Veículo', 'Capac. Cx', 'Capac. Kg', 'Disponível']
-        if not all(col in caminhoes_df.columns for col in colunas_caminhoes):
-            st.error("As colunas necessárias não foram encontradas na planilha da frota.")
+        colunas_faltando_caminhoes = [col for col in colunas_caminhoes if col not in caminhoes_df.columns]
+        if colunas_faltando_caminhoes:
+            st.error(f"As seguintes colunas estão faltando na planilha da frota: {', '.join(colunas_faltando_caminhoes)}")
             return
         
         # Filtrar caminhões ativos
