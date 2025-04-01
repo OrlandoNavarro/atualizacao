@@ -79,10 +79,10 @@ def resolver_vrp(pedidos_df, caminhoes_df, modo_roteirizacao, criterio_otimizaca
     pass
 
 # Função para otimizar o aproveitamento da frota usando programação linear
-def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, percentual_pedidos):
+def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, percentual_pedidos, ultimo_numero_carga):
     pedidos_df['Nº Carga'] = None
     pedidos_df['Placa'] = None
-    carga_numero = 1
+    carga_numero = ultimo_numero_carga + 1
     
     # Ajustar a capacidade da frota
     caminhoes_df['Capac. Kg'] *= (percentual_frota / 100)
@@ -280,8 +280,11 @@ def main():
             modo_roteirizacao = st.selectbox("Modo de roteirização", ["Frota Mínima", "Balanceado"])
             criterio_otimizacao = st.selectbox("Critério de otimização", ["Menor Tempo", "Menor Distância", "Menor Custo"])
             
+            # Obter o último número de carga das planilhas de roteirização
+            ultimo_numero_carga = roterizacao_df['Nº Carga'].max() if not roterizacao_df.empty else 0
+            
             # Alocar pedidos nos caminhões respeitando os limites de peso e quantidade de caixas
-            pedidos_df = otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, percentual_pedidos)
+            pedidos_df = otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, percentual_pedidos, ultimo_numero_carga)
             
             # Opções de roteirização
             rota_tsp = st.checkbox("Aplicar TSP")
