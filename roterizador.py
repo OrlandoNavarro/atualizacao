@@ -195,7 +195,7 @@ def main():
             st.error("As colunas necessárias não foram encontradas na planilha de pedidos.")
             return
         
-                colunas_caminhoes = ['Placa', 'Transportador', 'Descrição Veículo', 'Capac. Cx', 'Capac. Kg', 'Disponível']
+        colunas_caminhoes = ['Placa', 'Transportador', 'Descrição Veículo', 'Capac. Cx', 'Capac. Kg', 'Disponível']
         if not all(col in caminhoes_df.columns for col in colunas_caminhoes):
             st.error("As colunas necessárias não foram encontradas na planilha da frota.")
             return
