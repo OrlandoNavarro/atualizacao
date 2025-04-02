@@ -8,7 +8,6 @@ from geopy.distance import geodesic
 import folium
 from streamlit_folium import folium_static
 import random
-
 # Endereço de partida fixo
 endereco_partida = "Avenida Antonio Ortega, 3604 - Pinhal, Cabreúva - SP, São Paulo, Brasil"
 # Coordenadas geográficas do endereço de partida
@@ -88,7 +87,6 @@ def resolver_tsp_genetico(G):
         i, j = random.sample(range(len(route)), 2)
         route[i], route[j] = route[j], route[i]
         return route
-
     def crossover(route1, route2):
         size = len(route1)
         start, end = sorted(random.sample(range(size), 2))
@@ -189,6 +187,10 @@ def criar_mapa(pedidos_df):
     return mapa
 
 # Função para cadastrar caminhões
+def cadastrar_caminhoes():
+    st.title("Cadastro de Caminhões da Frota")
+    
+    # Função para cadastrar caminhões
 def cadastrar_caminhoes():
     st.title("Cadastro de Caminhões da Frota")
     
@@ -315,7 +317,7 @@ def main():
             st.error("Nenhum caminhão cadastrado. Por favor, cadastre caminhões primeiro.")
             return
         
-                # Verificar se as colunas necessárias estão presentes
+        # Verificar se as colunas necessárias estão presentes
         colunas_pedidos = ['Nº Carga', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Qtde. dos Itens', 'Peso dos Itens']
         
         colunas_faltando_pedidos = [col for col in colunas_pedidos if col not in pedidos_df.columns]
@@ -324,7 +326,7 @@ def main():
             return
         
         colunas_caminhoes = ['Placa', 'Transportador', 'Descrição Veículo', 'Capac. Cx', 'Capac. Kg', 'Disponível']
-        colunas_faltando_caminhoes = [col for col in colunas_caminhoes if col not in caminhoes_df.columns]
+        colunas_faltando_caminhoes = [col for col em colunas_caminhoes se col não estiver em caminhoes_df.columns]
         if colunas_faltando_caminhoes:
             st.error(f"As seguintes colunas estão faltando na planilha da frota: {', '.join(colunas_faltando_caminhoes)}")
             return
@@ -332,7 +334,7 @@ def main():
         # Filtrar caminhões ativos
         caminhoes_df = caminhoes_df[caminhoes_df['Disponível'] == 'Ativo']
         
-        # Opções de configuração
+                # Opções de configuração
         n_clusters = st.slider("Número de regiões para agrupar", min_value=1, max_value=10, value=5)
         percentual_frota = st.slider("Capacidade da frota a ser usada (%)", min_value=0, max_value=100, value=100)
         max_pedidos = st.slider("Número máximo de pedidos por veículo", min_value=1, max_value=20, value=10)
@@ -383,20 +385,6 @@ def main():
                     file_name="roterizacao_resultado.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
-            
-            # Botão para subir placas
-            if st.button("Subir Placas"):
-                try:
-                    roterizacao_df = pd.read_excel("roterizacao_dados.xlsx", engine='openpyxl')
-                    for regiao in pedidos_df['Regiao'].unique():
-                        pedidos_regiao = pedidos_df[pedidos_df['Regiao'] == regiao]
-                        placas_regiao = roterizacao_df[roterizacao_df['Regiao'] == regiao]['Placa'].unique()
-                        for placa in placas_regiao:
-                            if placa in caminhoes_df['Placa'].values:
-                                pedidos_df.loc[pedidos_regiao.index, 'Placa'] = placa
-                    st.success("Placas atribuídas com sucesso!")
-                except FileNotFoundError:
-                    st.error("Nenhuma planilha de roteirizações encontrada. Por favor, suba uma planilha de roteirizações primeiro.")
     
     # Opção para cadastrar caminhões
     if st.checkbox("Cadastrar Caminhões"):
