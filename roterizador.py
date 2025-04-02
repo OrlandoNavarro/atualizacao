@@ -24,11 +24,28 @@ def obter_coordenadas_distancematrix(endereco):
             location = data['results'][0]['geometry']['location']
             return (location['lat'], location['lng'])
         else:
+            # Tentar variações do endereço
+            endereco_variacoes = [
+                endereco + ", Brasil",
+                endereco.replace("Rua", "R.") + ", Brasil",
+                endereco.replace("Avenida", "Av.") + ", Brasil",
+                endereco.replace("Praça", "Pç.") + ", Brasil",
+                endereco.replace("Estrada", "Est.") + ", Brasil",
+                endereco.replace("Alameda", "Al.") + ", Brasil"
+            ]
+            for variacao in endereco_variacoes:
+                url = f"https://api.distancematrix.ai/maps/api/geocode/json?address={variacao}&key={api_key}"
+                response = requests.get(url)
+                data = response.json()
+                if 'status' in data and data['status'] == 'OK' and 'results' in data:
+                    location = data['results'][0]['geometry']['location']
+                    return (location['lat'], location['lng'])
             st.error(f"Não foi possível obter as coordenadas para o endereço: {endereco}. Status: {data.get('status', 'Desconhecido')}")
             return None
     except Exception as e:
         st.error(f"Erro ao tentar obter as coordenadas: {e}")
         return None
+
 # Função para obter coordenadas com fallback para coordenadas manuais
 def obter_coordenadas_com_fallback(endereco):
     coords = obter_coordenadas_distancematrix(endereco)
@@ -158,7 +175,7 @@ def cadastrar_caminhoes():
             caminhoes_df.to_excel("caminhoes_frota.xlsx", index=False)
             st.success("Frota carregada com sucesso!")
 
-    # Botão para limpar a frota
+        # Botão para limpar a frota
     if st.button("Limpar Frota"):
         caminhoes_df = pd.DataFrame(columns=['Placa', 'Transportador', 'Descrição Veículo', 'Capac. Cx', 'Capac. Kg', 'Disponível'])
         caminhoes_df.to_excel("caminhoes_frota.xlsx", index=False)
@@ -172,7 +189,7 @@ def cadastrar_caminhoes():
 def subir_roterizacoes():
     st.title("Upload de Planilhas de Roteirizações")
     
-        # Carregar DataFrame existente ou criar um novo
+    # Carregar DataFrame existente ou criar um novo
     try:
         roterizacao_df = pd.read_excel("roterizacao_dados.xlsx", engine='openpyxl')
     except FileNotFoundError:
