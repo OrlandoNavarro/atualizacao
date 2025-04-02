@@ -1,7 +1,6 @@
 streamlit_authenticator
 pandas
 pandas-datareader
-googlemaps
 streamlit
 scikit-learn
 pulp
