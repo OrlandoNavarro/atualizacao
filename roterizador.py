@@ -10,7 +10,7 @@ import folium
 from streamlit_folium import folium_static
 
 # Endereço de partida fixo
-endereco_partida = "Avenida Antonio Ortega, 3604 - Pinhal, Cabreúva - SP"
+endereco_partida = "Avenida Antonio Ortega, 3604 - Pinhal, Cabreúva - SP, São Paulo, Brasil"
 # Coordenadas geográficas do endereço de partida
 endereco_partida_coords = (-23.0838, -47.1336)  # Exemplo de coordenadas para Cabreúva, SP
 
@@ -18,17 +18,17 @@ endereco_partida_coords = (-23.0838, -47.1336)  # Exemplo de coordenadas para Ca
 def obter_coordenadas_osm(endereco):
     try:
         geolocator = Nominatim(user_agent="myGeocoder", timeout=10)  # Aumentar o tempo limite para 10 segundos
-        location = geolocator.geocode(endereco)
+        location = geolocator.geocode(endereco + ", São Paulo, Brasil")
         if location:
             return (location.latitude, location.longitude)
         else:
             # Tentar variações do endereço
             endereco_variacoes = [
-                endereco.replace("Rua", "R."),
-                endereco.replace("Avenida", "Av."),
-                endereco.replace("Praça", "Pç."),
-                endereco.replace("Estrada", "Est."),
-                endereco.replace("Alameda", "Al.")
+                endereco.replace("Rua", "R.") + ", São Paulo, Brasil",
+                endereco.replace("Avenida", "Av.") + ", São Paulo, Brasil",
+                endereco.replace("Praça", "Pç.") + ", São Paulo, Brasil",
+                endereco.replace("Estrada", "Est.") + ", São Paulo, Brasil",
+                endereco.replace("Alameda", "Al.") + ", São Paulo, Brasil"
             ]
             for variacao in endereco_variacoes:
                 location = geolocator.geocode(variacao)
@@ -79,7 +79,6 @@ def resolver_tsp_genetico(G):
 def resolver_vrp(pedidos_df, caminhoes_df, modo_roteirizacao, criterio_otimizacao):
     # Implementação do VRP usando OR-Tools
     pass
-
 # Função para otimizar o aproveitamento da frota usando programação linear
 def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, percentual_pedidos):
     pedidos_df['Nº Carga'] = None
@@ -177,36 +176,35 @@ def subir_roterizacoes():
         roterizacao_df = pd.read_excel("roterizacao_dados.xlsx", engine='openpyxl')
     except FileNotFoundError:
         roterizacao_df = pd.DataFrame(columns=['Placa', 'Nº Carga', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Qtde. dos Itens', 'Peso dos Itens'])
-    
     # Upload do arquivo Excel de Roteirizações
-    uploaded_roterizacao = st.file_uploader("Escolha o arquivo Excel de Roteirizações", type=["xlsx", "xlsm"])
+uploaded_roterizacao = st.file_uploader("Escolha o arquivo Excel de Roteirizações", type=["xlsx", "xlsm"])
+
+if uploaded_roterizacao is not None:
+    novo_roterizacao_df = pd.read_excel(uploaded_roterizacao, engine='openpyxl')
     
-    if uploaded_roterizacao is not None:
-        novo_roterizacao_df = pd.read_excel(uploaded_roterizacao, engine='openpyxl')
-        
-        # Verificar se as colunas necessárias estão presentes
-        colunas_roterizacao = ['Placa', 'Nº Carga', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Qtde. dos Itens', 'Peso dos Itens']
-        
-        colunas_faltando = [col for col in colunas_roterizacao if col not in novo_roterizacao_df.columns]
-        if colunas_faltando:
-            st.error(f"As seguintes colunas estão faltando na planilha de roteirizações: {', '.join(colunas_faltando)}")
-            return
-        
-        # Botão para carregar a roteirização
-        if st.button("Carregar Roteirização"):
-            roterizacao_df = pd.concat([roterizacao_df, novo_roterizacao_df], ignore_index=True)
-            roterizacao_df.to_excel("roterizacao_dados.xlsx", index=False)
-            st.success("Roteirização carregada com sucesso!")
-        
-    # Botão para limpar a roteirização
-    if st.button("Limpar Roteirização"):
-        roterizacao_df = pd.DataFrame(columns=colunas_roterizacao)
+    # Verificar se as colunas necessárias estão presentes
+    colunas_roterizacao = ['Placa', 'Nº Carga', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Qtde. dos Itens', 'Peso dos Itens']
+    
+    colunas_faltando = [col for col in colunas_roterizacao if col not in novo_roterizacao_df.columns]
+    if colunas_faltando:
+        st.error(f"As seguintes colunas estão faltando na planilha de roteirizações: {', '.join(colunas_faltando)}")
+        return
+    
+    # Botão para carregar a roteirização
+    if st.button("Carregar Roteirização"):
+        roterizacao_df = pd.concat([roterizacao_df, novo_roterizacao_df], ignore_index=True)
         roterizacao_df.to_excel("roterizacao_dados.xlsx", index=False)
-        st.success("Roteirização limpa com sucesso!")
+        st.success("Roteirização carregada com sucesso!")
     
-    # Exibir dados da planilha de roteirizações
-    st.subheader("Dados da Roteirização")
-    st.dataframe(roterizacao_df)
+# Botão para limpar a roteirização
+if st.button("Limpar Roteirização"):
+    roterizacao_df = pd.DataFrame(columns=colunas_roterizacao)
+    roterizacao_df.to_excel("roterizacao_dados.xlsx", index=False)
+    st.success("Roteirização limpa com sucesso!")
+
+# Exibir dados da planilha de roteirizações
+st.subheader("Dados da Roteirização")
+st.dataframe(roterizacao_df)
 
 # Função principal para o painel interativo
 def main():
@@ -228,7 +226,7 @@ def main():
             if coords is None:
                 # Coordenadas manuais para endereços específicos
                 coordenadas_manuais = {
-                    "Rua Araújo Leite, 146, Centro, Piedade": (-23.71241093449893, -47.41796911054548)
+                    "Rua Araújo Leite, 146, Centro, Piedade, São Paulo, Brasil": (-23.71241093449893, -47.41796911054548)
                 }
                 coords = coordenadas_manuais.get(endereco, (None, None))
             return coords
