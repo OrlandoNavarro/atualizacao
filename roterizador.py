@@ -136,7 +136,7 @@ def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, ma
     caminhoes_df['Capac. Cx'] *= (percentual_frota / 100)
     
     # Filtrar caminhões disponíveis
-    caminhoes_df = caminhoes_df[caminhoes_df['Disponível'] == 'Ativo']
+    caminhoes_df = caminhoes_df[caminhoes_df['Disponível'] == 'Sim']
     
     # Agrupar pedidos por região
     pedidos_df = agrupar_por_regiao(pedidos_df, n_clusters)
