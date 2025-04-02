@@ -29,7 +29,7 @@ def obter_coordenadas_osm(endereco):
             data = response.json()
             if data:
                 location = data[0]
-               ['lon']))
+                return (float(location['lat']), float(location['lon']))
             else:
                 st.error(f"Não foi possível obter as coordenadas para o endereço: {endereco}")
                 return None
@@ -40,7 +40,7 @@ def obter_coordenadas_osm(endereco):
             st.error(f"Erro ao tentar obter as coordenadas: {response.status_code}")
             return None
     except Exception as e:
-       Erro ao tentar obter as coordenadas: {e}")
+        st.error(f"Erro ao tentar obter as coordenadas: {e}")
         return None
 
 # Função para calcular distância entre dois endereços usando a fórmula de Haversine
