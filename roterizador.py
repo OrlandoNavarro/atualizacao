@@ -88,6 +88,7 @@ def resolver_tsp_genetico(G):
         i, j = random.sample(range(len(route)), 2)
         route[i], route[j] = route[j], route[i]
         return route
+
     def crossover(route1, route2):
         size = len(route1)
         start, end = sorted(random.sample(range(size), 2))
@@ -120,12 +121,12 @@ def resolver_tsp_genetico(G):
     return best_route, best_distance
 
 # Função para resolver o VRP usando OR-Tools
-def resolver_vrp(pedidos_df, caminhoes_df, modo_roteirizacao, criterio_otimizacao):
+def resolver_vrp(pedidos_df, caminhoes_df):
     # Implementação do VRP usando OR-Tools
     pass
 
 # Função para otimizar o aproveitamento da frota usando programação linear
-def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, percentual_pedidos):
+def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, max_pedidos):
     pedidos_df['Nº Carga'] = None
     pedidos_df['Placa'] = None
     carga_numero = 1
@@ -148,7 +149,7 @@ def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, pe
             capacidade_caixas = caminhao['Capac. Cx']
             
             pedidos_alocados = pedidos_regiao[(pedidos_regiao['Peso dos Itens'] <= capacidade_peso) & (pedidos_regiao['Qtde. dos Itens'] <= capacidade_caixas)]
-            pedidos_alocados = pedidos_alocados.sample(frac=(percentual_pedidos / 100))
+            pedidos_alocados = pedidos_alocados.sample(n=min(max_pedidos, len(pedidos_alocados)))
             
             if not pedidos_alocados.empty:
                 pedidos_df.loc[pedidos_alocados.index, 'Nº Carga'] = carga_numero
@@ -323,12 +324,10 @@ def main():
         # Filtrar caminhões ativos
         caminhoes_df = caminhoes_df[caminhoes_df['Disponível'] == 'Ativo']
         
-               # Opções de configuração
+            # Opções de configuração
         n_clusters = st.slider("Número de regiões para agrupar", min_value=1, max_value=10, value=5)
         percentual_frota = st.slider("Capacidade da frota a ser usada (%)", min_value=0, max_value=100, value=100)
-        percentual_pedidos = st.slider("Percentual de pedidos alocados por veículo (%)", min_value=0, max_value=100, value=100)
-        modo_roteirizacao = st.selectbox("Modo de roteirização", ["Frota Mínima", "Balanceado"])
-        criterio_otimizacao = st.selectbox("Critério de otimização", ["Menor Tempo", "Menor Distância", "Menor Custo"])
+        max_pedidos = st.slider("Número máximo de pedidos por veículo", min_value=1, max_value=20, value=10)
         rota_tsp = st.checkbox("Aplicar TSP")
         rota_vrp = st.checkbox("Aplicar VRP")
         
@@ -341,7 +340,7 @@ def main():
             pedidos_df = agrupar_por_regiao(pedidos_df, n_clusters)
             
             # Alocar pedidos nos caminhões respeitando os limites de peso e quantidade de caixas
-            pedidos_df = otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, percentual_pedidos)
+            pedidos_df = otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, max_pedidos)
             
             if rota_tsp:
                 G = criar_grafo_tsp(pedidos_df)
@@ -352,7 +351,7 @@ def main():
                 pedidos_df['Ordem de Entrega TSP'] = pedidos_df['Endereço Completo'].apply(lambda x: melhor_rota.index(x) + 1)
             
             if rota_vrp:
-                melhor_rota_vrp = resolver_vrp(pedidos_df, caminhoes_df, modo_roteirizacao, criterio_otimizacao)
+                melhor_rota_vrp = resolver_vrp(pedidos_df, caminhoes_df)
                 st.write(f"Melhor rota VRP: {melhor_rota_vrp}")
             
             # Exibir resultado
