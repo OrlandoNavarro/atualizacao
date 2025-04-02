@@ -20,11 +20,11 @@ def obter_coordenadas_distancematrix(endereco):
         url = f"https://api.distancematrix.ai/maps/api/geocode/json?address={endereco}&key={api_key}"
         response = requests.get(url)
         data = response.json()
-        if data['status'] == 'OK':
+        if 'status' in data and data['status'] == 'OK' and 'results' in data:
             location = data['results'][0]['geometry']['location']
             return (location['lat'], location['lng'])
         else:
-            st.error(f"Não foi possível obter as coordenadas para o endereço: {endereco}")
+            st.error(f"Não foi possível obter as coordenadas para o endereço: {endereco}. Status: {data.get('status', 'Desconhecido')}")
             return None
     except Exception as e:
         st.error(f"Erro ao tentar obter as coordenadas: {e}")
@@ -66,7 +66,7 @@ def criar_grafo_tsp(pedidos_df):
         coords_1 = G.nodes[endereco1]['pos']
         coords_2 = G.nodes[endereco2]['pos']
         distancia = calcular_distancia(coords_1, coords_2)
-        if distancia is not None:
+        if distancia is não None:
             G.add_edge(endereco1, endereco2, weight=distancia)
     
     return G
