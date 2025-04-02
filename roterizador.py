@@ -16,17 +16,17 @@ from geopy.distance import geodesic
 endereco_partida = "Avenida Antonio Ortega, 3604 - Pinhal, Cabreúva - SP"
 # Coordenadas geográficas do endereço de partida
 endereco_partida_coords = (-23.0838, -47.1336)  # Exemplo de coordenadas para Cabreúva, SP
-
-# Função para obter coordenadas geográficas de um endereço usando OpenStreetMap API
-def obter_coordenadas_osm(endereco):
+# Função para obter coordenadas geográficas de um endereço usando Distancematrix.ai API
+def obter_coordenadas_distancematrix(endereco):
     try:
-        url = f"https://nominatim.openstreetmap.org/search?q={endereco}&format=json&limit=1"
+        api_key = 'YOUR_DISTANCEMATRIX_API_KEY'  # Substitua pela sua chave de API
+        url = f"https://api.distancematrix.ai/maps/api/geocode/json?address={endereco}&key={api_key}"
         response = requests.get(url)
         if response.status_code == 200:
             data = response.json()
-            if data:
-                location = data[0]
-                return (float(location['lat']), float(location['lon']))
+            if data['results']:
+                location = data['results'][0]['geometry']['location']
+                return (location['lat'], location['lng'])
             else:
                 st.error(f"Não foi possível obter as coordenadas para o endereço: {endereco}")
                 return None
@@ -42,9 +42,9 @@ def calcular_distancia(endereco1, endereco2):
     if endereco1 == endereco_partida:
         coords_1 = endereco_partida_coords
     else:
-        coords_1 = obter_coordenadas_osm(endereco1)
+        coords_1 = obter_coordenadas_distancematrix(endereco1)
     
-    coords_2 = obter_coordenadas_osm(endereco2)
+    coords_2 = obter_coordenadas_distancematrix(endereco2)
     
     if coords_1 and coords_2:
         distancia = geodesic(coords_1, coords_2).meters
@@ -187,7 +187,7 @@ def subir_roterizacoes():
     if uploaded_roterizacao is not None:
         novo_roterizacao_df = pd.read_excel(uploaded_roterizacao, engine='openpyxl')
         
-               # Verificar se as colunas necessárias estão presentes
+        # Verificar se as colunas necessárias estão presentes
         colunas_roterizacao = ['Placa', 'Nº Carga', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Qtde. dos Itens', 'Peso dos Itens']
         
         colunas_faltando = [col for col in colunas_roterizacao if col not in novo_roterizacao_df.columns]
@@ -227,7 +227,7 @@ def main():
         
         # Obter coordenadas geográficas
         def obter_coordenadas_com_fallback(endereco):
-            coords = obter_coordenadas_osm(endereco)
+            coords = obter_coordenadas_distancematrix(endereco)
             if coords is None:
                 # Coordenadas manuais para endereços específicos
                 coordenadas_manuais = {
