@@ -22,6 +22,18 @@ def obter_coordenadas_osm(endereco):
         if location:
             return (location.latitude, location.longitude)
         else:
+            # Tentar variações do endereço
+            endereco_variacoes = [
+                endereco.replace("Rua", "R."),
+                endereco.replace("Avenida", "Av."),
+                endereco.replace("Praça", "Pç."),
+                endereco.replace("Estrada", "Est."),
+                endereco.replace("Alameda", "Al.")
+            ]
+            for variacao in endereco_variacoes:
+                location = geolocator.geocode(variacao)
+                if location:
+                    return (location.latitude, location.longitude)
             st.error(f"Não foi possível obter as coordenadas para o endereço: {endereco}")
             return None
     except Exception as e:
@@ -62,6 +74,7 @@ def criar_grafo_tsp(pedidos_df):
 def resolver_tsp_genetico(G):
     # Implementação do algoritmo genético para TSP
     pass
+
 # Função para resolver o VRP usando OR-Tools
 def resolver_vrp(pedidos_df, caminhoes_df, modo_roteirizacao, criterio_otimizacao):
     # Implementação do VRP usando OR-Tools
