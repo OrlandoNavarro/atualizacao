@@ -291,7 +291,7 @@ def main():
             st.error("Não foi possível obter as coordenadas para alguns endereços. Verifique os endereços e tente novamente.")
             return
         
-                # Carregar dados da frota cadastrada
+        # Carregar dados da frota cadastrada
         try:
             caminhoes_df = pd.read_excel("caminhoes_frota.xlsx", engine='openpyxl')
         except FileNotFoundError:
@@ -322,7 +322,7 @@ def main():
         rota_tsp = st.checkbox("Aplicar TSP")
         rota_vrp = st.checkbox("Aplicar VRP")
         
-        # Mostrar opções de roteirização após o upload da planilha
+                # Mostrar opções de roteirização após o upload da planilha
         if st.button("Roteirizar"):
             # Processamento dos dados
             pedidos_df = pedidos_df[pedidos_df['Peso dos Itens'] > 0]
@@ -388,7 +388,7 @@ def criar_mapa(pedidos_df):
     # Adicionar marcadores para os pedidos
     for _, row in pedidos_df.iterrows():
         folium.Marker(
-            location=[row['Latitude'], 'Longitude'],
+            location=[row['Latitude'], row['Longitude']],
             popup=row['Endereço Completo'],
             icon=folium.Icon(color='blue')
         ).add_to(mapa)
