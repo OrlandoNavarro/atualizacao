@@ -1,5 +1,5 @@
 import pandas as pd
-import googlemaps
+import requests
 import os
 import streamlit as st
 from sklearn.cluster import KMeans
@@ -12,24 +12,26 @@ import folium
 from streamlit_folium import folium_static
 from geopy.distance import geodesic
 
-# Chave da API do Google Maps
-api_key = 'AIzaSyBpl7-N-RrwTVI6f2k5Kx5jQ0S1FamvNow'
-gmaps = googlemaps.Client(key=api_key)
-
 # Endereço de partida fixo
 endereco_partida = "Avenida Antonio Ortega, 3604 - Pinhal, Cabreúva - SP"
 # Coordenadas geográficas do endereço de partida
 endereco_partida_coords = (-23.0838, -47.1336)  # Exemplo de coordenadas para Cabreúva, SP
 
-# Função para obter coordenadas geográficas de um endereço usando Google Maps API
-def obter_coordenadas_google(endereco):
+# Função para obter coordenadas geográficas de um endereço usando OpenStreetMap API
+def obter_coordenadas_osm(endereco):
     try:
-        geocode_result = gmaps.geocode(endereco)
-        if geocode_result:
-            location = geocode_result[0]['geometry']['location']
-            return (location['lat'], location['lng'])
+        url = f"https://nominatim.openstreetmap.org/search?q={endereco}&format=json&limit=1"
+        response = requests.get(url)
+        if response.status_code == 200:
+            data = response.json()
+            if data:
+                location = data[0]
+                return (float(location['lat']), float(location['lon']))
+            else:
+                st.error(f"Não foi possível obter as coordenadas para o endereço: {endereco}")
+                return None
         else:
-            st.error(f"Não foi possível obter as coordenadas para o endereço: {endereco}")
+            st.error(f"Erro ao tentar obter as coordenadas: {response.status_code}")
             return None
     except Exception as e:
         st.error(f"Erro ao tentar obter as coordenadas: {e}")
@@ -40,9 +42,9 @@ def calcular_distancia(endereco1, endereco2):
     if endereco1 == endereco_partida:
         coords_1 = endereco_partida_coords
     else:
-        coords_1 = obter_coordenadas_google(endereco1)
+        coords_1 = obter_coordenadas_osm(endereco1)
     
-    coords_2 = obter_coordenadas_google(endereco2)
+    coords_2 = obter_coordenadas_osm(endereco2)
     
     if coords_1 and coords_2:
         distancia = geodesic(coords_1, coords_2).meters
@@ -179,13 +181,13 @@ def subir_roterizacoes():
     except FileNotFoundError:
         roterizacao_df = pd.DataFrame(columns=['Placa', 'Nº Carga', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Qtde. dos Itens', 'Peso dos Itens'])
     
-        # Upload do arquivo Excel de Roteirizações
+    # Upload do arquivo Excel de Roteirizações
     uploaded_roterizacao = st.file_uploader("Escolha o arquivo Excel de Roteirizações", type=["xlsx", "xlsm"])
     
     if uploaded_roterizacao is not None:
         novo_roterizacao_df = pd.read_excel(uploaded_roterizacao, engine='openpyxl')
         
-        # Verificar se as colunas necessárias estão presentes
+               # Verificar se as colunas necessárias estão presentes
         colunas_roterizacao = ['Placa', 'Nº Carga', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Qtde. dos Itens', 'Peso dos Itens']
         
         colunas_faltando = [col for col in colunas_roterizacao if col not in novo_roterizacao_df.columns]
@@ -225,7 +227,7 @@ def main():
         
         # Obter coordenadas geográficas
         def obter_coordenadas_com_fallback(endereco):
-            coords = obter_coordenadas_google(endereco)
+            coords = obter_coordenadas_osm(endereco)
             if coords is None:
                 # Coordenadas manuais para endereços específicos
                 coordenadas_manuais = {
