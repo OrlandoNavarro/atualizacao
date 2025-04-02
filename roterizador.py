@@ -134,21 +134,30 @@ def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, pe
     caminhoes_df['Capac. Kg'] *= (percentual_frota / 100)
     caminhoes_df['Capac. Cx'] *= (percentual_frota / 100)
     
-    for _, caminhao in caminhoes_df.iterrows():
-        capacidade_peso = caminhao['Capac. Kg']
-        capacidade_caixas = caminhao['Capac. Cx']
+    # Filtrar caminhões disponíveis
+    caminhoes_df = caminhoes_df[caminhoes_df['Disponível'] == 'Ativo']
+    
+    # Agrupar pedidos por região
+    pedidos_df = agrupar_por_regiao(pedidos_df)
+    
+    for regiao in pedidos_df['Regiao'].unique():
+        pedidos_regiao = pedidos_df[pedidos_df['Regiao'] == regiao]
         
-        pedidos_alocados = pedidos_df[(pedidos_df['Peso dos Itens'] <= capacidade_peso) & (pedidos_df['Qtde. dos Itens'] <= capacidade_caixas)]
-        pedidos_alocados = pedidos_alocados.sample(frac=(percentual_pedidos / 100))
-        
-        if not pedidos_alocados.empty:
-            pedidos_df.loc[pedidos_alocados.index, 'Nº Carga'] = carga_numero
-            pedidos_df.loc[pedidos_alocados.index, 'Placa'] = caminhao['Placa']
+        for _, caminhao in caminhoes_df.iterrows():
+            capacidade_peso = caminhao['Capac. Kg']
+            capacidade_caixas = caminhao['Capac. Cx']
             
-            capacidade_peso -= pedidos_alocados['Peso dos Itens'].sum()
-            capacidade_caixas -= pedidos_alocados['Qtde. dos Itens'].sum()
+            pedidos_alocados = pedidos_regiao[(pedidos_regiao['Peso dos Itens'] <= capacidade_peso) & (pedidos_regiao['Qtde. dos Itens'] <= capacidade_caixas)]
+            pedidos_alocados = pedidos_alocados.sample(frac=(percentual_pedidos / 100))
             
-            carga_numero += 1
+            if not pedidos_alocados.empty:
+                pedidos_df.loc[pedidos_alocados.index, 'Nº Carga'] = carga_numero
+                pedidos_df.loc[pedidos_alocados.index, 'Placa'] = caminhao['Placa']
+                
+                capacidade_peso -= pedidos_alocados['Peso dos Itens'].sum()
+                capacidade_caixas -= pedidos_alocados['Qtde. dos Itens'].sum()
+                
+                carga_numero += 1
     
     return pedidos_df
 
@@ -184,7 +193,7 @@ def cadastrar_caminhoes():
     except FileNotFoundError:
         caminhoes_df = pd.DataFrame(columns=['Placa', 'Transportador', 'Descrição Veículo', 'Capac. Cx', 'Capac. Kg', 'Disponível'])
     
-      # Upload do arquivo Excel de Caminhões
+    # Upload do arquivo Excel de Caminhões
     uploaded_caminhoes = st.file_uploader("Escolha o arquivo Excel de Caminhões", type=["xlsx", "xlsm"])
     
     if uploaded_caminhoes is not None:
@@ -314,7 +323,7 @@ def main():
         # Filtrar caminhões ativos
         caminhoes_df = caminhoes_df[caminhoes_df['Disponível'] == 'Ativo']
         
-        # Opções de configuração
+               # Opções de configuração
         n_clusters = st.slider("Número de regiões para agrupar", min_value=1, max_value=10, value=5)
         percentual_frota = st.slider("Capacidade da frota a ser usada (%)", min_value=0, max_value=100, value=100)
         percentual_pedidos = st.slider("Percentual de pedidos alocados por veículo (%)", min_value=0, max_value=100, value=100)
@@ -323,7 +332,7 @@ def main():
         rota_tsp = st.checkbox("Aplicar TSP")
         rota_vrp = st.checkbox("Aplicar VRP")
         
-                # Mostrar opções de roteirização após o upload da planilha
+        # Mostrar opções de roteirização após o upload da planilha
         if st.button("Roteirizar"):
             # Processamento dos dados
             pedidos_df = pedidos_df[pedidos_df['Peso dos Itens'] > 0]
