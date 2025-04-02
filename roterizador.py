@@ -166,28 +166,6 @@ def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, ma
     
     return pedidos_df
 
-# Função para agrupar por região usando KMeans
-def agrupar_por_regiao(pedidos_df, n_clusters=5):
-    kmeans = KMeans(n_clusters=n_clusters)
-    pedidos_df['Regiao'] = kmeans.fit_predict(pedidos_df[['Latitude', 'Longitude']])
-    
-    return pedidos_df
-
-# Função para criar um mapa com folium
-def criar_mapa(pedidos_df):
-    mapa = folium.Map(location=[-23.55052, -46.633308], zoom_start=10)
-    
-    if 'Latitude' in pedidos_df.columns and 'Longitude' in pedidos_df.columns:
-        for _, row in pedidos_df.iterrows():
-            folium.Marker(
-                location=[row['Latitude'], row['Longitude']],
-                popup=f"{row['Endereço Completo']} - Placa: {row['Placa']}"
-            ).add_to(mapa)
-    else:
-        st.error("As colunas 'Latitude' e 'Longitude' não foram encontradas no DataFrame.")
-    
-    return mapa
-
 # Função para cadastrar caminhões
 def cadastrar_caminhoes():
     st.title("Cadastro de Caminhões da Frota")
@@ -229,7 +207,12 @@ def cadastrar_caminhoes():
     
     # Exibir caminhões cadastrados
     st.subheader("Caminhões Cadastrados")
-    st.dataframe(caminhoes_df)
+    edited_caminhoes_df = st.data_editor(caminhoes_df, num_rows="dynamic")
+    
+    # Botão para salvar alterações
+    if st.button("Salvar Alterações"):
+        edited_caminhoes_df.to_excel("caminhoes_frota.xlsx", index=False)
+        st.success("Alterações salvas com sucesso!")
 
 # Função para subir planilhas de roteirizações
 def subir_roterizacoes():
@@ -315,7 +298,7 @@ def main():
             st.error("Nenhum caminhão cadastrado. Por favor, cadastre caminhões primeiro.")
             return
         
-        # Verificar se as colunas necessárias estão presentes
+                # Verificar se as colunas necessárias estão presentes
         colunas_pedidos = ['Nº Carga', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Qtde. dos Itens', 'Peso dos Itens']
         
         colunas_faltando_pedidos = [col for col in colunas_pedidos if col not in pedidos_df.columns]
@@ -332,7 +315,7 @@ def main():
         # Filtrar caminhões ativos
         caminhoes_df = caminhoes_df[caminhoes_df['Disponível'] == 'Ativo']
         
-                # Opções de configuração
+        # Opções de configuração
         n_clusters = st.slider("Número de regiões para agrupar", min_value=1, max_value=10, value=5)
         percentual_frota = st.slider("Capacidade da frota a ser usada (%)", min_value=0, max_value=100, value=100)
         max_pedidos = st.slider("Número máximo de pedidos por veículo", min_value=1, max_value=20, value=10)
