@@ -46,9 +46,28 @@ def obter_coordenadas_distancematrix(endereco):
         st.error(f"Erro ao tentar obter as coordenadas: {e}")
         return None
 
+# Função para obter coordenadas geográficas de um endereço usando OpenCage
+def obter_coordenadas_opencage(endereco):
+    try:
+        api_key = "YOUR_OPENCAGE_API_KEY"  # Substitua pela sua chave de API do OpenCage
+        url = f"https://api.opencagedata.com/geocode/v1/json?q={endereco}&key={api_key}"
+        response = requests.get(url)
+        data = response.json()
+        if 'status' in data and data['status']['code'] == 200 and 'results' in data:
+            location = data['results'][0]['geometry']
+            return (location['lat'], location['lng'])
+        else:
+            st.error(f"Não foi possível obter as coordenadas para o endereço: {endereco}. Status: {data.get('status', {}).get('message', 'Desconhecido')}")
+            return None
+    except Exception as e:
+        st.error(f"Erro ao tentar obter as coordenadas: {e}")
+        return None
+
 # Função para obter coordenadas com fallback para coordenadas manuais
 def obter_coordenadas_com_fallback(endereco):
     coords = obter_coordenadas_distancematrix(endereco)
+    if coords is None:
+        coords = obter_coordenadas_opencage(endereco)
     if coords is None:
         # Coordenadas manuais para endereços específicos
         coordenadas_manuais = {
@@ -156,7 +175,7 @@ def cadastrar_caminhoes():
     except FileNotFoundError:
         caminhoes_df = pd.DataFrame(columns=['Placa', 'Transportador', 'Descrição Veículo', 'Capac. Cx', 'Capac. Kg', 'Disponível'])
     
-    # Upload do arquivo Excel de Caminhões
+        # Upload do arquivo Excel de Caminhões
     uploaded_caminhoes = st.file_uploader("Escolha o arquivo Excel de Caminhões", type=["xlsx", "xlsm"])
     
     if uploaded_caminhoes is not None:
@@ -175,7 +194,7 @@ def cadastrar_caminhoes():
             caminhoes_df.to_excel("caminhoes_frota.xlsx", index=False)
             st.success("Frota carregada com sucesso!")
 
-        # Botão para limpar a frota
+    # Botão para limpar a frota
     if st.button("Limpar Frota"):
         caminhoes_df = pd.DataFrame(columns=['Placa', 'Transportador', 'Descrição Veículo', 'Capac. Cx', 'Capac. Kg', 'Disponível'])
         caminhoes_df.to_excel("caminhoes_frota.xlsx", index=False)
