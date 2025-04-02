@@ -21,20 +21,26 @@ endereco_partida_coords = (-23.0838, -47.1336)  # Exemplo de coordenadas para Ca
 def obter_coordenadas_osm(endereco):
     try:
         url = f"https://nominatim.openstreetmap.org/search?q={endereco}&format=json&limit=1"
-        response = requests.get(url)
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        response = requests.get(url, headers=headers)
         if response.status_code == 200:
             data = response.json()
             if data:
                 location = data[0]
-                return (float(location['lat']), float(location['lon']))
+               ['lon']))
             else:
                 st.error(f"Não foi possível obter as coordenadas para o endereço: {endereco}")
                 return None
+        elif response.status_code == 403:
+            st.error("Erro 403: Acesso negado. Verifique se você tem permissão para acessar a API.")
+            return None
         else:
             st.error(f"Erro ao tentar obter as coordenadas: {response.status_code}")
             return None
     except Exception as e:
-        st.error(f"Erro ao tentar obter as coordenadas: {e}")
+       Erro ao tentar obter as coordenadas: {e}")
         return None
 
 # Função para calcular distância entre dois endereços usando a fórmula de Haversine
