@@ -79,6 +79,7 @@ def resolver_tsp_genetico(G):
 def resolver_vrp(pedidos_df, caminhoes_df, modo_roteirizacao, criterio_otimizacao):
     # Implementação do VRP usando OR-Tools
     pass
+
 # Função para otimizar o aproveitamento da frota usando programação linear
 def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, percentual_pedidos):
     pedidos_df['Nº Carga'] = None
@@ -176,6 +177,7 @@ def subir_roterizacoes():
         roterizacao_df = pd.read_excel("roterizacao_dados.xlsx", engine='openpyxl')
     except FileNotFoundError:
         roterizacao_df = pd.DataFrame(columns=['Placa', 'Nº Carga', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Qtde. dos Itens', 'Peso dos Itens'])
+    
     # Upload do arquivo Excel de Roteirizações
 uploaded_roterizacao = st.file_uploader("Escolha o arquivo Excel de Roteirizações", type=["xlsx", "xlsm"])
 
