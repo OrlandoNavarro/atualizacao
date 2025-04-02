@@ -98,13 +98,14 @@ def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, pe
         pedidos_alocados = pedidos_df[(pedidos_df['Peso dos Itens'] <= capacidade_peso) & (pedidos_df['Qtde. dos Itens'] <= capacidade_caixas)]
         pedidos_alocados = pedidos_alocados.sample(frac=(percentual_pedidos / 100))
         
-        pedidos_df.loc[pedidos_alocados.index, 'Nº Carga'] = carga_numero
-        pedidos_df.loc[pedidos_alocados.index, 'Placa'] = caminhao['Placa']
-        
-        capacidade_peso -= pedidos_alocados['Peso dos Itens'].sum()
-        capacidade_caixas -= pedidos_alocados['Qtde. dos Itens'].sum()
-        
-        carga_numero += 1
+        if not pedidos_alocados.empty:
+            pedidos_df.loc[pedidos_alocados.index, 'Nº Carga'] = carga_numero
+            pedidos_df.loc[pedidos_alocados.index, 'Placa'] = caminhao['Placa']
+            
+            capacidade_peso -= pedidos_alocados['Peso dos Itens'].sum()
+            capacidade_caixas -= pedidos_alocados['Qtde. dos Itens'].sum()
+            
+            carga_numero += 1
     
     return pedidos_df
 
@@ -257,31 +258,25 @@ def main():
         # Filtrar caminhões ativos
         caminhoes_df = caminhoes_df[caminhoes_df['Disponível'] == 'Ativo']
         
+        # Opções de configuração
+        n_clusters = st.slider("Número de regiões para agrupar", min_value=1, max_value=10, value=5)
+        percentual_frota = st.slider("Capacidade da frota a ser usada (%)", min_value=0, max_value=100, value=100)
+        percentual_pedidos = st.slider("Percentual de pedidos alocados por veículo (%)", min_value=0, max_value=100, value=100)
+        modo_roteirizacao = st.selectbox("Modo de roteirização", ["Frota Mínima", "Balanceado"])
+        criterio_otimizacao = st.selectbox("Critério de otimização", ["Menor Tempo", "Menor Distância", "Menor Custo"])
+        rota_tsp = st.checkbox("Aplicar TSP")
+        rota_vrp = st.checkbox("Aplicar VRP")
+        
         # Mostrar opções de roteirização após o upload da planilha
         if st.button("Roteirizar"):
             # Processamento dos dados
             pedidos_df = pedidos_df[pedidos_df['Peso dos Itens'] > 0]
             
-            # Opções de agrupamento por região
-            n_clusters = st.slider("Número de regiões para agrupar", min_value=1, max_value=10, value=5)
+            # Agrupar por região
             pedidos_df = agrupar_por_regiao(pedidos_df, n_clusters)
-            
-            # Definir capacidade da frota
-            percentual_frota = st.slider("Capacidade da frota a ser usada (%)", min_value=0, max_value=100, value=100)
-            
-            # Definir percentual de pedidos alocados por veículo
-            percentual_pedidos = st.slider("Percentual de pedidos alocados por veículo (%)", min_value=0, max_value=100, value=100)
-            
-            # Parâmetros de roteirização
-            modo_roteirizacao = st.selectbox("Modo de roteirização", ["Frota Mínima", "Balanceado"])
-            criterio_otimizacao = st.selectbox("Critério de otimização", ["Menor Tempo", "Menor Distância", "Menor Custo"])
             
             # Alocar pedidos nos caminhões respeitando os limites de peso e quantidade de caixas
             pedidos_df = otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, percentual_pedidos)
-            
-            # Opções de roteirização
-            rota_tsp = st.checkbox("Aplicar TSP")
-            rota_vrp = st.checkbox("Aplicar VRP")
             
             if rota_tsp:
                 G = criar_grafo_tsp(pedidos_df)
