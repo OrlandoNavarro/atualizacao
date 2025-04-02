@@ -161,7 +161,7 @@ def cadastrar_caminhoes():
             caminhoes_df.to_excel("caminhoes_frota.xlsx", index=False)
             st.success("Frota carregada com sucesso!")
 
-    # Botão para limpar a frota
+     # Botão para limpar a frota
     if st.button("Limpar Frota"):
         caminhoes_df = pd.DataFrame(columns=['Placa', 'Transportador', 'Descrição Veículo', 'Capac. Cx', 'Capac. Kg', 'Disponível'])
         caminhoes_df.to_excel("caminhoes_frota.xlsx", index=False)
@@ -181,7 +181,7 @@ def subir_roterizacoes():
     except FileNotFoundError:
         roterizacao_df = pd.DataFrame(columns=['Placa', 'Nº Carga', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Qtde. dos Itens', 'Peso dos Itens'])
     
-     # Upload do arquivo Excel de Roteirizações
+    # Upload do arquivo Excel de Roteirizações
     uploaded_roterizacao = st.file_uploader("Escolha o arquivo Excel de Roteirizações", type=["xlsx", "xlsm"])
     
     if uploaded_roterizacao is not None:
@@ -313,7 +313,7 @@ def main():
             pedidos_df.to_excel(output_file_path, index=False)
             st.write(f"Arquivo Excel com a roteirização feita foi salvo em: {output_file_path}")
             
-            # Botão para baixar o arquivo Excel
+                # Botão para baixar o arquivo Excel
             with open(output_file_path, "rb") as file:
                 btn = st.download_button(
                     label="Baixar planilha",
