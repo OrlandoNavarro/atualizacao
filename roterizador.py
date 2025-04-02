@@ -131,7 +131,6 @@ def criar_mapa(pedidos_df):
         st.error("As colunas 'Latitude' e 'Longitude' não foram encontradas no DataFrame.")
     
     return mapa
-
 # Função para cadastrar caminhões
 def cadastrar_caminhoes():
     st.title("Cadastro de Caminhões da Frota")
