@@ -119,7 +119,6 @@ def resolver_tsp_genetico(G):
     population = [random.sample(nodes, len(nodes)) for _ in range(100)]
     best_route, best_distance = genetic_algorithm(population)
     return best_route, best_distance
-
 # Função para resolver o VRP usando OR-Tools
 def resolver_vrp(pedidos_df, caminhoes_df):
     # Implementação do VRP usando OR-Tools
@@ -138,7 +137,7 @@ def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, ma
     # Filtrar caminhões disponíveis
     caminhoes_df = caminhoes_df[caminhoes_df['Disponível'] == 'Ativo']
     
-    # Agrupar pedidos por região
+      # Agrupar pedidos por região
     pedidos_df = agrupar_por_regiao(pedidos_df)
     
     for regiao in pedidos_df['Regiao'].unique():
@@ -297,7 +296,7 @@ def main():
             pedidos_df['Latitude'] = pedidos_df['Endereço Completo'].apply(lambda x: obter_coordenadas_com_fallback(x, coordenadas_salvas)[0])
             pedidos_df['Longitude'] = pedidos_df['Endereço Completo'].apply(lambda x: obter_coordenadas_com_fallback(x, coordenadas_salvas)[1])
         
-        # Salvar coordenadas atualizadas
+                # Salvar coordenadas atualizadas
         coordenadas_salvas_df = pd.DataFrame(coordenadas_salvas.items(), columns=['Endereço', 'Coordenadas'])
         coordenadas_salvas_df[['Latitude', 'Longitude']] = pd.DataFrame(coordenadas_salvas_df['Coordenadas'].tolist(), index=coordenadas_salvas_df.index)
         coordenadas_salvas_df.drop(columns=['Coordenadas'], inplace=True)
@@ -332,7 +331,7 @@ def main():
         # Filtrar caminhões ativos
         caminhoes_df = caminhoes_df[caminhoes_df['Disponível'] == 'Ativo']
         
-                # Opções de configuração
+        # Opções de configuração
         n_clusters = st.slider("Número de regiões para agrupar", min_value=1, max_value=10, value=5)
         percentual_frota = st.slider("Capacidade da frota a ser usada (%)", min_value=0, max_value=100, value=100)
         max_pedidos = st.slider("Número máximo de pedidos por veículo", min_value=1, max_value=20, value=10)
