@@ -182,7 +182,7 @@ def cadastrar_caminhoes():
     if uploaded_caminhoes is not None:
         novo_caminhoes_df = pd.read_excel(uploaded_caminhoes, engine='openpyxl')
         
-        # Verificar se as colunas necessárias estão presentes
+               # Verificar se as colunas necessárias estão presentes
         colunas_caminhoes = ['Placa', 'Transportador', 'Descrição Veículo', 'Capac. Cx', 'Capac. Kg', 'Disponível']
         
         if not all(col in novo_caminhoes_df.columns for col in colunas_caminhoes):
@@ -298,7 +298,7 @@ def main():
             st.error("Nenhum caminhão cadastrado. Por favor, cadastre caminhões primeiro.")
             return
         
-                # Verificar se as colunas necessárias estão presentes
+        # Verificar se as colunas necessárias estão presentes
         colunas_pedidos = ['Nº Carga', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Qtde. dos Itens', 'Peso dos Itens']
         
         colunas_faltando_pedidos = [col for col in colunas_pedidos if col not in pedidos_df.columns]
@@ -322,7 +322,7 @@ def main():
         rota_tsp = st.checkbox("Aplicar TSP")
         rota_vrp = st.checkbox("Aplicar VRP")
         
-        # Mostrar opções de roteirização após o upload da planilha
+               # Mostrar opções de roteirização após o upload da planilha
         if st.button("Roteirizar"):
             # Processamento dos dados
             pedidos_df = pedidos_df[pedidos_df['Peso dos Itens'] > 0]
