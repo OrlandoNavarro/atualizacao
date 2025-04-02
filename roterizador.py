@@ -17,7 +17,7 @@ endereco_partida_coords = (-23.0838, -47.1336)  # Exemplo de coordenadas para Ca
 # Função para obter coordenadas geográficas de um endereço usando geopy e Nominatim
 def obter_coordenadas_osm(endereco):
     try:
-        geolocator = Nominatim(user_agent="myGeocoder")
+        geolocator = Nominatim(user_agent="myGeocoder", timeout=10)  # Aumentar o tempo limite para 10 segundos
         location = geolocator.geocode(endereco)
         if location:
             return (location.latitude, location.longitude)
@@ -178,7 +178,7 @@ def subir_roterizacoes():
     except FileNotFoundError:
         roterizacao_df = pd.DataFrame(columns=['Placa', 'Nº Carga', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Qtde. dos Itens', 'Peso dos Itens'])
     
-    # Upload do arquivo Excel de Roteirizações
+   # Upload do arquivo Excel de Roteirizações
     uploaded_roterizacao = st.file_uploader("Escolha o arquivo Excel de Roteirizações", type=["xlsx", "xlsm"])
     
     if uploaded_roterizacao is not None:
