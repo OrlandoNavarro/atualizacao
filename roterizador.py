@@ -29,7 +29,6 @@ def obter_coordenadas_distancematrix(endereco):
     except Exception as e:
         st.error(f"Erro ao tentar obter as coordenadas: {e}")
         return None
-
 # Função para obter coordenadas com fallback para coordenadas manuais
 def obter_coordenadas_com_fallback(endereco):
     coords = obter_coordenadas_distancematrix(endereco)
@@ -66,7 +65,7 @@ def criar_grafo_tsp(pedidos_df):
         coords_1 = G.nodes[endereco1]['pos']
         coords_2 = G.nodes[endereco2]['pos']
         distancia = calcular_distancia(coords_1, coords_2)
-        if distancia is não None:
+        if distancia is not None:
             G.add_edge(endereco1, endereco2, weight=distancia)
     
     return G
