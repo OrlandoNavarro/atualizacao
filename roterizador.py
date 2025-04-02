@@ -17,17 +17,16 @@ endereco_partida = "Avenida Antonio Ortega, 3604 - Pinhal, Cabreúva - SP"
 # Coordenadas geográficas do endereço de partida
 endereco_partida_coords = (-23.0838, -47.1336)  # Exemplo de coordenadas para Cabreúva, SP
 
-# Função para obter coordenadas geográficas de um endereço usando Distancematrix.ai API
-def obter_coordenadas_distancematrix(endereco):
+# Função para obter coordenadas geográficas de um endereço usando OpenStreetMap API
+def obter_coordenadas_osm(endereco):
     try:
-        api_key = 'uJGTJXYCN8M4HSU2vP4uj81LNgSLGgURUuQmhYPPgcJDJehWULWMR68lNwMhWPBb'  # Sua chave de API
-        url = f"https://api.distancematrix.ai/maps/api/geocode/json?address={endereco}&key={api_key}"
+        url = f"https://nominatim.openstreetmap.org/search?q={endereco}&format=json&limit=1"
         response = requests.get(url)
         if response.status_code == 200:
             data = response.json()
-            if data['results']:
-                location = data['results'][0]['geometry']['location']
-                return (location['lat'], location['lng'])
+            if data:
+                location = data[0]
+                return (float(location['lat']), float(location['lon']))
             else:
                 st.error(f"Não foi possível obter as coordenadas para o endereço: {endereco}")
                 return None
@@ -43,9 +42,9 @@ def calcular_distancia(endereco1, endereco2):
     if endereco1 == endereco_partida:
         coords_1 = endereco_partida_coords
     else:
-        coords_1 = obter_coordenadas_distancematrix(endereco1)
+        coords_1 = obter_coordenadas_osm(endereco1)
     
-    coords_2 = obter_coordenadas_distancematrix(endereco2)
+    coords_2 = obter_coordenadas_osm(endereco2)
     
     if coords_1 and coords_2:
         distancia = geodesic(coords_1, coords_2).meters
@@ -228,7 +227,7 @@ def main():
         
         # Obter coordenadas geográficas
         def obter_coordenadas_com_fallback(endereco):
-            coords = obter_coordenadas_distancematrix(endereco)
+            coords = obter_coordenadas_osm(endereco)
             if coords is None:
                 # Coordenadas manuais para endereços específicos
                 coordenadas_manuais = {
