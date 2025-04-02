@@ -172,7 +172,7 @@ def cadastrar_caminhoes():
 def subir_roterizacoes():
     st.title("Upload de Planilhas de Roteirizações")
     
-        # Carregar DataFrame existente ou criar um novo
+    # Carregar DataFrame existente ou criar um novo
     try:
         roterizacao_df = pd.read_excel("roterizacao_dados.xlsx", engine='openpyxl')
     except FileNotFoundError:
