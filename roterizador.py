@@ -126,8 +126,8 @@ def resolver_vrp(pedidos_df, caminhoes_df):
 
 # Função para otimizar o aproveitamento da frota usando programação linear
 def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, max_pedidos):
-    pedidos_df['Nº Carga'] = None
-    pedidos_df['Placa'] = None
+    pedidos_df['Nº Carga'] = 0
+    pedidos_df['Placa'] = ""
     carga_numero = 1
     
     # Ajustar a capacidade da frota
@@ -137,7 +137,7 @@ def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, ma
     # Filtrar caminhões disponíveis
     caminhoes_df = caminhoes_df[caminhoes_df['Disponível'] == 'Ativo']
     
-      # Agrupar pedidos por região
+    # Agrupar pedidos por região
     pedidos_df = agrupar_por_regiao(pedidos_df)
     
     for regiao in pedidos_df['Regiao'].unique():
@@ -162,13 +162,6 @@ def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, ma
     # Verificar se as placas e números de carga foram atribuídos corretamente
     if pedidos_df['Placa'].isnull().any() or pedidos_df['Nº Carga'].isnull().any():
         st.error("Não foi possível atribuir placas ou números de carga a alguns pedidos. Verifique os dados e tente novamente.")
-    
-    return pedidos_df
-
-# Função para agrupar por região usando KMeans
-def agrupar_por_regiao(pedidos_df, n_clusters=5):
-    kmeans = KMeans(n_clusters=n_clusters)
-    pedidos_df['Regiao'] = kmeans.fit_predict(pedidos_df[['Latitude', 'Longitude']])
     
     return pedidos_df
 
