@@ -191,7 +191,7 @@ def cadastrar_caminhoes():
     if uploaded_caminhoes is not None:
         novo_caminhoes_df = pd.read_excel(uploaded_caminhoes, engine='openpyxl')
         
-        # Verificar se as colunas necessárias estão presentes
+              # Verificar se as colunas necessárias estão presentes
         colunas_caminhoes = ['Placa', 'Transportador', 'Descrição Veículo', 'Capac. Cx', 'Capac. Kg', 'Disponível']
         
         if not all(col in novo_caminhoes_df.columns for col in colunas_caminhoes):
@@ -324,7 +324,7 @@ def main():
         rota_tsp = st.checkbox("Aplicar TSP")
         rota_vrp = st.checkbox("Aplicar VRP")
         
-                # Mostrar opções de roteirização após o upload da planilha
+        # Mostrar opções de roteirização após o upload da planilha
         if st.button("Roteirizar"):
             # Processamento dos dados
             pedidos_df = pedidos_df[pedidos_df['Peso dos Itens'] > 0]
@@ -332,7 +332,7 @@ def main():
             # Agrupar por região
             pedidos_df = agrupar_por_regiao(pedidos_df, n_clusters)
             
-            # Alocar pedidos nos caminhões respeitando os limites de peso e quantidade de caixas
+                        # Alocar pedidos nos caminhões respeitando os limites de peso e quantidade de caixas
             pedidos_df = otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, percentual_pedidos)
             
             if rota_tsp:
