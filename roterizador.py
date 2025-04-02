@@ -207,6 +207,10 @@ def cadastrar_caminhoes():
             st.error("As colunas necessárias não foram encontradas na planilha de caminhões.")
             return
         
+        # Excluir placas específicas
+        placas_excluir = ["FLB1111", "FLB2222", "FLB3333", "FLB4444", "FLB5555", "FLB6666", "FLB7777", "FLB8888", "FLB9999"]
+        novo_caminhoes_df = novo_caminhoes_df[~novo_caminhoes_df['Placa'].isin(placas_excluir)]
+        
         # Botão para carregar a frota
         if st.button("Carregar Frota"):
             caminhoes_df = pd.concat([caminhoes_df, novo_caminhoes_df], ignore_index=True)
@@ -324,7 +328,7 @@ def main():
         # Filtrar caminhões ativos
         caminhoes_df = caminhoes_df[caminhoes_df['Disponível'] == 'Ativo']
         
-            # Opções de configuração
+               # Opções de configuração
         n_clusters = st.slider("Número de regiões para agrupar", min_value=1, max_value=10, value=5)
         percentual_frota = st.slider("Capacidade da frota a ser usada (%)", min_value=0, max_value=100, value=100)
         max_pedidos = st.slider("Número máximo de pedidos por veículo", min_value=1, max_value=20, value=10)
