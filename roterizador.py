@@ -31,7 +31,10 @@ def obter_coordenadas_opencage(endereco):
         return None
 
 # Função para obter coordenadas com fallback para coordenadas manuais
-def obter_coordenadas_com_fallback(endereco):
+def obter_coordenadas_com_fallback(endereco, coordenadas_salvas):
+    if endereco in coordenadas_salvas:
+        return coordenadas_salvas[endereco]
+    
     coords = obter_coordenadas_opencage(endereco)
     if coords is None:
         # Coordenadas manuais para endereços específicos
@@ -39,6 +42,10 @@ def obter_coordenadas_com_fallback(endereco):
             "Rua Araújo Leite, 146, Centro, Piedade, São Paulo, Brasil": (-23.71241093449893, -47.41796911054548)
         }
         coords = coordenadas_manuais.get(endereco, (None, None))
+    
+    if coords:
+        coordenadas_salvas[endereco] = coords
+    
     return coords
 
 # Função para calcular distância entre dois endereços usando a fórmula de Haversine
@@ -130,7 +137,6 @@ def criar_mapa(pedidos_df):
         st.error("As colunas 'Latitude' e 'Longitude' não foram encontradas no DataFrame.")
     
     return mapa
-
 # Função para cadastrar caminhões
 def cadastrar_caminhoes():
     st.title("Cadastro de Caminhões da Frota")
@@ -224,10 +230,23 @@ def main():
         # Formar o endereço completo
         pedidos_df['Endereço Completo'] = pedidos_df['Endereço de Entrega'] + ', ' + pedidos_df['Bairro de Entrega'] + ', ' + pedidos_df['Cidade de Entrega']
         
+        # Carregar coordenadas salvas
+        try:
+            coordenadas_salvas_df = pd.read_excel("coordenadas_salvas.xlsx", engine='openpyxl')
+            coordenadas_salvas = dict(zip(coordenadas_salvas_df['Endereço'], zip(coordenadas_salvas_df['Latitude'], coordenadas_salvas_df['Longitude'])))
+        except FileNotFoundError:
+            coordenadas_salvas = {}
+        
         # Obter coordenadas geográficas
         with st.spinner('Aguarde, obtendo coordenadas de latitude e longitude...'):
-            pedidos_df['Latitude'] = pedidos_df['Endereço Completo'].apply(lambda x: obter_coordenadas_com_fallback(x)[0])
-            pedidos_df['Longitude'] = pedidos_df['Endereço Completo'].apply(lambda x: obter_coordenadas_com_fallback(x)[1])
+            pedidos_df['Latitude'] = pedidos_df['Endereço Completo'].apply(lambda x: obter_coordenadas_com_fallback(x, coordenadas_salvas)[0])
+            pedidos_df['Longitude'] = pedidos_df['Endereço Completo'].apply(lambda x: obter_coordenadas_com_fallback(x, coordenadas_salvas)[1])
+        
+        # Salvar coordenadas atualizadas
+        coordenadas_salvas_df = pd.DataFrame(coordenadas_salvas.items(), columns=['Endereço', 'Coordenadas'])
+        coordenadas_salvas_df[['Latitude', 'Longitude']] = pd.DataFrame(coordenadas_salvas_df['Coordenadas'].tolist(), index=coordenadas_salvas_df.index)
+        coordenadas_salvas_df.drop(columns=['Coordenadas'], inplace=True)
+        coordenadas_salvas_df.to_excel("coordenadas_salvas.xlsx", index=False)
         
         # Verificar se as coordenadas foram obtidas corretamente
         if pedidos_df['Latitude'].isnull().any() or pedidos_df['Longitude'].isnull().any():
@@ -297,7 +316,7 @@ def main():
             mapa = criar_mapa(pedidos_df)
             folium_static(mapa)
             
-            # Gerar arquivo Excel com a roteirização feita
+                        # Gerar arquivo Excel com a roteirização feita
             output_file_path = 'roterizacao_resultado.xlsx'
             pedidos_df.to_excel(output_file_path, index=False)
             st.write(f"Arquivo Excel com a roteirização feita foi salvo em: {output_file_path}")
