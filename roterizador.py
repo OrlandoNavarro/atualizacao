@@ -24,8 +24,7 @@ def obter_coordenadas_osm(endereco):
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
-        response = requests.get(url, headers=headers)
-        if response.status_code == 200:
+        response.status_code == 200:
             data = response.json()
             if data:
                 location = data[0]
@@ -36,22 +35,14 @@ def obter_coordenadas_osm(endereco):
         elif response.status_code == 403:
             st.error("Erro 403: Acesso negado. Verifique se você tem permissão para acessar a API.")
             return None
-        else:
-            st.error(f"Erro ao tentar obter as coordenadas: {response.status_code}")
+                   st.error(f"Erro ao tentar obter as coordenadas: {response.status_code}")
             return None
     except Exception as e:
         st.error(f"Erro ao tentar obter as coordenadas: {e}")
         return None
 
 # Função para calcular distância entre dois endereços usando a fórmula de Haversine
-def calcular_distancia(endereco1, endereco2):
-    if endereco1 == endereco_partida:
-        coords_1 = endereco_partida_coords
-    else:
-        coords_1 = obter_coordenadas_osm(endereco1)
-    
-    coords_2 = obter_coordenadas_osm(endereco2)
-    
+def calcular_distancia(coords_1, coords_2):
     if coords_1 and coords_2:
         distancia = geodesic(coords_1, coords_2).meters
         return distancia
@@ -64,18 +55,21 @@ def criar_grafo_tsp(pedidos_df):
     enderecos = pedidos_df['Endereço Completo'].unique()
     
     # Adicionar o endereço de partida
-    G.add_node(endereco_partida)
+    G.add_node(endereco_partida, pos=endereco_partida_coords)
     
     for endereco in enderecos:
-        G.add_node(endereco)
+        coords = (pedidos_df.loc[pedidos_df['Endereço Completo'] == endereco, 'Latitude'].values[0],
+                  pedidos_df.loc[pedidos_df['Endereço Completo'] == endereco, 'Longitude'].values[0])
+        G.add_node(endereco, pos=coords)
     
     for (endereco1, endereco2) in permutations([endereco_partida] + list(enderecos), 2):
-        distancia = calcular_distancia(endereco1, endereco2)
+        coords_1 = G.nodes[endereco1]['pos']
+        coords_2 = G.nodes[endereco2]['pos']
+        distancia = calcular_distancia(coords_1, coords_2)
         if distancia is not None:
             G.add_edge(endereco1, endereco2, weight=distancia)
     
     return G
-
 # Função para resolver o TSP usando Algoritmo Genético
 def resolver_tsp_genetico(G):
     # Implementação do algoritmo genético para TSP
@@ -115,11 +109,8 @@ def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, pe
 
 # Função para agrupar por região usando KMeans
 def agrupar_por_regiao(pedidos_df, n_clusters=5):
-    pedidos_df['Coordenada X'] = pedidos_df['Cidade de Entrega'].apply(lambda x: hash(x) % 100)
-    pedidos_df['Coordenada Y'] = pedidos_df['Bairro de Entrega'].apply(lambda x: hash(x) % 100)
-    
     kmeans = KMeans(n_clusters=n_clusters)
-    pedidos_df['Regiao'] = kmeans.fit_predict(pedidos_df[['Coordenada X', 'Coordenada Y']])
+    pedidos_df['Regiao'] = kmeans.fit_predict(pedidos_df[['Latitude', 'Longitude']])
     
     return pedidos_df
 
