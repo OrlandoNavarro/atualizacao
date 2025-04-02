@@ -30,6 +30,7 @@ def obter_coordenadas_opencage(endereco):
     except Exception as e:
         st.error(f"Erro ao tentar obter as coordenadas: {e}")
         return None
+
 # Função para obter coordenadas com fallback para coordenadas manuais
 def obter_coordenadas_com_fallback(endereco, coordenadas_salvas):
     if endereco in coordenadas_salvas:
@@ -314,7 +315,7 @@ def main():
             st.error("Nenhum caminhão cadastrado. Por favor, cadastre caminhões primeiro.")
             return
         
-        # Verificar se as colunas necessárias estão presentes
+                # Verificar se as colunas necessárias estão presentes
         colunas_pedidos = ['Nº Carga', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Qtde. dos Itens', 'Peso dos Itens']
         
         colunas_faltando_pedidos = [col for col in colunas_pedidos if col not in pedidos_df.columns]
@@ -331,7 +332,7 @@ def main():
         # Filtrar caminhões ativos
         caminhoes_df = caminhoes_df[caminhoes_df['Disponível'] == 'Ativo']
         
-                # Opções de configuração
+        # Opções de configuração
         n_clusters = st.slider("Número de regiões para agrupar", min_value=1, max_value=10, value=5)
         percentual_frota = st.slider("Capacidade da frota a ser usada (%)", min_value=0, max_value=100, value=100)
         max_pedidos = st.slider("Número máximo de pedidos por veículo", min_value=1, max_value=20, value=10)
