@@ -24,7 +24,8 @@ def obter_coordenadas_osm(endereco):
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
-        response.status_code == 200:
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
             data = response.json()
             if data:
                 location = data[0]
@@ -35,7 +36,8 @@ def obter_coordenadas_osm(endereco):
         elif response.status_code == 403:
             st.error("Erro 403: Acesso negado. Verifique se você tem permissão para acessar a API.")
             return None
-                   st.error(f"Erro ao tentar obter as coordenadas: {response.status_code}")
+        else:
+            st.error(f"Erro ao tentar obter as coordenadas: {response.status_code}")
             return None
     except Exception as e:
         st.error(f"Erro ao tentar obter as coordenadas: {e}")
@@ -70,6 +72,7 @@ def criar_grafo_tsp(pedidos_df):
             G.add_edge(endereco1, endereco2, weight=distancia)
     
     return G
+
 # Função para resolver o TSP usando Algoritmo Genético
 def resolver_tsp_genetico(G):
     # Implementação do algoritmo genético para TSP
@@ -172,7 +175,6 @@ def cadastrar_caminhoes():
 def subir_roterizacoes():
     st.title("Upload de Planilhas de Roteirizações")
     
-  
     # Carregar DataFrame existente ou criar um novo
     try:
         roterizacao_df = pd.read_excel("roterizacao_dados.xlsx", engine='openpyxl')
