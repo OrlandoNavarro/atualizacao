@@ -387,7 +387,7 @@ def criar_mapa(pedidos_df):
     
     # Adicionar marcadores para os pedidos
     for _, row in pedidos_df.iterrows():
-        popup_text = f"Endereço: {row['Endereço Completo']}<br>Placa do Caminhão: {row['Placa']}"
+        popup_text = f"Endereço: {row['Placa']}<br>Placa do Caminhão: {row['Endereço Completo']}"
         folium.Marker(
             location=[row['Latitude'], row['Longitude']],
             popup=popup_text,
