@@ -126,7 +126,7 @@ def resolver_vrp(pedidos_df, caminhoes_df):
     pass
 
 # Função para otimizar o aproveitamento da frota usando programação linear
-def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, max_pedidos):
+def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, max_pedidos, n_clusters):
     pedidos_df['Nº Carga'] = 0
     pedidos_df['Placa'] = ""
     carga_numero = 1
@@ -182,7 +182,7 @@ def cadastrar_caminhoes():
     if uploaded_caminhoes is not None:
         novo_caminhoes_df = pd.read_excel(uploaded_caminhoes, engine='openpyxl')
         
-               # Verificar se as colunas necessárias estão presentes
+                # Verificar se as colunas necessárias estão presentes
         colunas_caminhoes = ['Placa', 'Transportador', 'Descrição Veículo', 'Capac. Cx', 'Capac. Kg', 'Disponível']
         
         if not all(col in novo_caminhoes_df.columns for col in colunas_caminhoes):
@@ -291,7 +291,7 @@ def main():
             st.error("Não foi possível obter as coordenadas para alguns endereços. Verifique os endereços e tente novamente.")
             return
         
-        # Carregar dados da frota cadastrada
+                # Carregar dados da frota cadastrada
         try:
             caminhoes_df = pd.read_excel("caminhoes_frota.xlsx", engine='openpyxl')
         except FileNotFoundError:
@@ -322,7 +322,7 @@ def main():
         rota_tsp = st.checkbox("Aplicar TSP")
         rota_vrp = st.checkbox("Aplicar VRP")
         
-                # Mostrar opções de roteirização após o upload da planilha
+        # Mostrar opções de roteirização após o upload da planilha
         if st.button("Roteirizar"):
             # Processamento dos dados
             pedidos_df = pedidos_df[pedidos_df['Peso dos Itens'] > 0]
@@ -331,7 +331,7 @@ def main():
             pedidos_df = agrupar_por_regiao(pedidos_df, n_clusters)
             
             # Alocar pedidos nos caminhões respeitando os limites de peso e quantidade de caixas
-            pedidos_df = otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, max_pedidos)
+            pedidos_df = otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, max_pedidos, n_clusters)
             
             if rota_tsp:
                 G = criar_grafo_tsp(pedidos_df)
@@ -388,7 +388,7 @@ def criar_mapa(pedidos_df):
     # Adicionar marcadores para os pedidos
     for _, row in pedidos_df.iterrows():
         folium.Marker(
-            location=[row['Latitude'], row['Longitude']],
+            location=[row['Latitude'], 'Longitude'],
             popup=row['Endereço Completo'],
             icon=folium.Icon(color='blue')
         ).add_to(mapa)
