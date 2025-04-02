@@ -160,6 +160,10 @@ def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, ma
                 
                 carga_numero += 1
     
+    # Verificar se as placas e números de carga foram atribuídos corretamente
+    if pedidos_df['Placa'].isnull().any() or pedidos_df['Nº Carga'].isnull().any():
+        st.error("Não foi possível atribuir placas ou números de carga a alguns pedidos. Verifique os dados e tente novamente.")
+    
     return pedidos_df
 
 # Função para agrupar por região usando KMeans
@@ -311,7 +315,7 @@ def main():
             st.error("Nenhum caminhão cadastrado. Por favor, cadastre caminhões primeiro.")
             return
         
-        # Verificar se as colunas necessárias estão presentes
+                # Verificar se as colunas necessárias estão presentes
         colunas_pedidos = ['Nº Carga', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Qtde. dos Itens', 'Peso dos Itens']
         
         colunas_faltando_pedidos = [col for col in colunas_pedidos if col not in pedidos_df.columns]
@@ -328,7 +332,7 @@ def main():
         # Filtrar caminhões ativos
         caminhoes_df = caminhoes_df[caminhoes_df['Disponível'] == 'Ativo']
         
-               # Opções de configuração
+        # Opções de configuração
         n_clusters = st.slider("Número de regiões para agrupar", min_value=1, max_value=10, value=5)
         percentual_frota = st.slider("Capacidade da frota a ser usada (%)", min_value=0, max_value=100, value=100)
         max_pedidos = st.slider("Número máximo de pedidos por veículo", min_value=1, max_value=20, value=10)
@@ -379,7 +383,21 @@ def main():
                     file_name="roterizacao_resultado.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
-
+            
+            # Botão para subir placas
+            if st.button("Subir Placas"):
+                try:
+                    roterizacao_df = pd.read_excel("roterizacao_dados.xlsx", engine='openpyxl')
+                    for regiao in pedidos_df['Regiao'].unique():
+                        pedidos_regiao = pedidos_df[pedidos_df['Regiao'] == regiao]
+                        placas_regiao = roterizacao_df[roterizacao_df['Regiao'] == regiao]['Placa'].unique()
+                        for placa in placas_regiao:
+                            if placa in caminhoes_df['Placa'].values:
+                                pedidos_df.loc[pedidos_regiao.index, 'Placa'] = placa
+                    st.success("Placas atribuídas com sucesso!")
+                except FileNotFoundError:
+                    st.error("Nenhuma planilha de roteirizações encontrada. Por favor, suba uma planilha de roteirizações primeiro.")
+    
     # Opção para cadastrar caminhões
     if st.checkbox("Cadastrar Caminhões"):
         cadastrar_caminhoes()
