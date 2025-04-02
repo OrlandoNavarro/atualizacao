@@ -178,13 +178,13 @@ def subir_roterizacoes():
     except FileNotFoundError:
         roterizacao_df = pd.DataFrame(columns=['Placa', 'Nº Carga', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Qtde. dos Itens', 'Peso dos Itens'])
     
-   # Upload do arquivo Excel de Roteirizações
+    # Upload do arquivo Excel de Roteirizações
     uploaded_roterizacao = st.file_uploader("Escolha o arquivo Excel de Roteirizações", type=["xlsx", "xlsm"])
     
     if uploaded_roterizacao is not None:
         novo_roterizacao_df = pd.read_excel(uploaded_roterizacao, engine='openpyxl')
         
-        # Verificar se as colunas necessárias estão presentes
+       # Verificar se as colunas necessárias estão presentes
         colunas_roterizacao = ['Placa', 'Nº Carga', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Qtde. dos Itens', 'Peso dos Itens']
         
         colunas_faltando = [col for col in colunas_roterizacao if col not in novo_roterizacao_df.columns]
@@ -233,8 +233,14 @@ def main():
                 coords = coordenadas_manuais.get(endereco, (None, None))
             return coords
         
-        pedidos_df['Latitude'] = pedidos_df['Endereço Completo'].apply(lambda x: obter_coordenadas_com_fallback(x)[0])
-        pedidos_df['Longitude'] = pedidos_df['Endereço Completo'].apply(lambda x: obter_coordenadas_com_fallback(x)[1])
+        with st.spinner('Aguarde, obtendo coordenadas de latitude e longitude...'):
+            pedidos_df['Latitude'] = pedidos_df['Endereço Completo'].apply(lambda x: obter_coordenadas_com_fallback(x)[0])
+            pedidos_df['Longitude'] = pedidos_df['Endereço Completo'].apply(lambda x: obter_coordenadas_com_fallback(x)[1])
+        
+        # Verificar se as coordenadas foram obtidas corretamente
+        if pedidos_df['Latitude'].isnull().any() or pedidos_df['Longitude'].isnull().any():
+            st.error("Não foi possível obter as coordenadas para alguns endereços. Verifique os endereços e tente novamente.")
+            return
         
         # Carregar dados da frota cadastrada
         try:
