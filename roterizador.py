@@ -30,7 +30,6 @@ def obter_coordenadas_opencage(endereco):
     except Exception as e:
         st.error(f"Erro ao tentar obter as coordenadas: {e}")
         return None
-
 # Função para obter coordenadas com fallback para coordenadas manuais
 def obter_coordenadas_com_fallback(endereco, coordenadas_salvas):
     if endereco in coordenadas_salvas:
@@ -119,6 +118,7 @@ def resolver_tsp_genetico(G):
     population = [random.sample(nodes, len(nodes)) for _ in range(100)]
     best_route, best_distance = genetic_algorithm(population)
     return best_route, best_distance
+
 # Função para resolver o VRP usando OR-Tools
 def resolver_vrp(pedidos_df, caminhoes_df):
     # Implementação do VRP usando OR-Tools
@@ -162,6 +162,13 @@ def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, ma
     # Verificar se as placas e números de carga foram atribuídos corretamente
     if pedidos_df['Placa'].isnull().any() or pedidos_df['Nº Carga'].isnull().any():
         st.error("Não foi possível atribuir placas ou números de carga a alguns pedidos. Verifique os dados e tente novamente.")
+    
+    return pedidos_df
+
+# Função para agrupar por região usando KMeans
+def agrupar_por_regiao(pedidos_df, n_clusters=5):
+    kmeans = KMeans(n_clusters=n_clusters)
+    pedidos_df['Regiao'] = kmeans.fit_predict(pedidos_df[['Latitude', 'Longitude']])
     
     return pedidos_df
 
@@ -289,7 +296,7 @@ def main():
             pedidos_df['Latitude'] = pedidos_df['Endereço Completo'].apply(lambda x: obter_coordenadas_com_fallback(x, coordenadas_salvas)[0])
             pedidos_df['Longitude'] = pedidos_df['Endereço Completo'].apply(lambda x: obter_coordenadas_com_fallback(x, coordenadas_salvas)[1])
         
-                # Salvar coordenadas atualizadas
+        # Salvar coordenadas atualizadas
         coordenadas_salvas_df = pd.DataFrame(coordenadas_salvas.items(), columns=['Endereço', 'Coordenadas'])
         coordenadas_salvas_df[['Latitude', 'Longitude']] = pd.DataFrame(coordenadas_salvas_df['Coordenadas'].tolist(), index=coordenadas_salvas_df.index)
         coordenadas_salvas_df.drop(columns=['Coordenadas'], inplace=True)
@@ -324,7 +331,7 @@ def main():
         # Filtrar caminhões ativos
         caminhoes_df = caminhoes_df[caminhoes_df['Disponível'] == 'Ativo']
         
-        # Opções de configuração
+                # Opções de configuração
         n_clusters = st.slider("Número de regiões para agrupar", min_value=1, max_value=10, value=5)
         percentual_frota = st.slider("Capacidade da frota a ser usada (%)", min_value=0, max_value=100, value=100)
         max_pedidos = st.slider("Número máximo de pedidos por veículo", min_value=1, max_value=20, value=10)
