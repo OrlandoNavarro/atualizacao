@@ -1,43 +1,28 @@
 import pandas as pd
-import requests
-import os
+import geopy
+from geopy.geocoders import Nominatim
 import streamlit as st
 from sklearn.cluster import KMeans
-from pulp import LpProblem, LpMinimize, LpVariable, lpSum
 import networkx as nx
 from itertools import permutations
-from ortools.constraint_solver import routing_enums_pb2
-from ortools.constraint_solver import pywrapcp
+from geopy.distance import geodesic
 import folium
 from streamlit_folium import folium_static
-from geopy.distance import geodesic
 
 # Endereço de partida fixo
 endereco_partida = "Avenida Antonio Ortega, 3604 - Pinhal, Cabreúva - SP"
 # Coordenadas geográficas do endereço de partida
 endereco_partida_coords = (-23.0838, -47.1336)  # Exemplo de coordenadas para Cabreúva, SP
 
-# Função para obter coordenadas geográficas de um endereço usando OpenStreetMap API
+# Função para obter coordenadas geográficas de um endereço usando geopy e Nominatim
 def obter_coordenadas_osm(endereco):
     try:
-        url = f"https://nominatim.openstreetmap.org/search?q={endereco}&format=json&limit=1"
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        }
-        response = requests.get(url, headers=headers)
-        if response.status_code == 200:
-            data = response.json()
-            if data:
-                location = data[0]
-                return (float(location['lat']), float(location['lon']))
-            else:
-                st.error(f"Não foi possível obter as coordenadas para o endereço: {endereco}")
-                return None
-        elif response.status_code == 403:
-            st.error("Erro 403: Acesso negado. Verifique se você tem permissão para acessar a API.")
-            return None
+        geolocator = Nominatim(user_agent="myGeocoder")
+        location = geolocator.geocode(endereco)
+        if location:
+            return (location.latitude, location.longitude)
         else:
-            st.error(f"Erro ao tentar obter as coordenadas: {response.status_code}")
+            st.error(f"Não foi possível obter as coordenadas para o endereço: {endereco}")
             return None
     except Exception as e:
         st.error(f"Erro ao tentar obter as coordenadas: {e}")
@@ -77,7 +62,6 @@ def criar_grafo_tsp(pedidos_df):
 def resolver_tsp_genetico(G):
     # Implementação do algoritmo genético para TSP
     pass
-
 # Função para resolver o VRP usando OR-Tools
 def resolver_vrp(pedidos_df, caminhoes_df, modo_roteirizacao, criterio_otimizacao):
     # Implementação do VRP usando OR-Tools
