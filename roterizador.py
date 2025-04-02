@@ -78,7 +78,6 @@ def criar_grafo_tsp(pedidos_df):
             G.add_edge(endereco1, endereco2, weight=distancia)
     
     return G
-
 # Função para resolver o TSP usando Algoritmo Genético
 def resolver_tsp_genetico(G):
     def fitness(route):
@@ -119,7 +118,6 @@ def resolver_tsp_genetico(G):
     population = [random.sample(nodes, len(nodes)) for _ in range(100)]
     best_route, best_distance = genetic_algorithm(population)
     return best_route, best_distance
-
 # Função para resolver o VRP usando OR-Tools
 def resolver_vrp(pedidos_df, caminhoes_df):
     # Implementação do VRP usando OR-Tools
@@ -182,7 +180,7 @@ def cadastrar_caminhoes():
     if uploaded_caminhoes is not None:
         novo_caminhoes_df = pd.read_excel(uploaded_caminhoes, engine='openpyxl')
         
-               # Verificar se as colunas necessárias estão presentes
+        # Verificar se as colunas necessárias estão presentes
         colunas_caminhoes = ['Placa', 'Transportador', 'Descrição Veículo', 'Capac. Cx', 'Capac. Kg', 'Disponível']
         
         if not all(col in novo_caminhoes_df.columns for col in colunas_caminhoes):
@@ -322,7 +320,7 @@ def main():
         rota_tsp = st.checkbox("Aplicar TSP")
         rota_vrp = st.checkbox("Aplicar VRP")
         
-               # Mostrar opções de roteirização após o upload da planilha
+                # Mostrar opções de roteirização após o upload da planilha
         if st.button("Roteirizar"):
             # Processamento dos dados
             pedidos_df = pedidos_df[pedidos_df['Peso dos Itens'] > 0]
@@ -374,5 +372,32 @@ def main():
     # Opção para subir planilhas de roteirizações
     if st.checkbox("Subir Planilhas de Roteirizações"):
         subir_roterizacoes()
+
+# Função para agrupar pedidos por região usando KMeans
+def agrupar_por_regiao(pedidos_df, n_clusters):
+    kmeans = KMeans(n_clusters=n_clusters)
+    pedidos_df['Regiao'] = kmeans.fit_predict(pedidos_df[['Latitude', 'Longitude']])
+    return pedidos_df
+
+# Função para criar o mapa com as rotas
+def criar_mapa(pedidos_df):
+    mapa = folium.Map(location=endereco_partida_coords, zoom_start=12)
+    
+    # Adicionar marcadores para os pedidos
+    for _, row in pedidos_df.iterrows():
+        folium.Marker(
+            location=[row['Latitude'], row['Longitude']],
+            popup=row['Endereço Completo'],
+            icon=folium.Icon(color='blue')
+        ).add_to(mapa)
+    
+    # Adicionar marcador para o endereço de partida
+    folium.Marker(
+        location=endereco_partida_coords,
+        popup="Endereço de Partida",
+        icon=folium.Icon(color='red')
+    ).add_to(mapa)
+    
+    return mapa
 
 main()
