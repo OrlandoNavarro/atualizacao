@@ -7,6 +7,7 @@ from itertools import permutations
 from geopy.distance import geodesic
 import folium
 from streamlit_folium import folium_static
+import random
 
 # Endereço de partida fixo
 endereco_partida = "Avenida Antonio Ortega, 3604 - Pinhal, Cabreúva - SP, São Paulo, Brasil"
@@ -80,8 +81,44 @@ def criar_grafo_tsp(pedidos_df):
 
 # Função para resolver o TSP usando Algoritmo Genético
 def resolver_tsp_genetico(G):
-    # Implementação do algoritmo genético para TSP
-    pass
+    def fitness(route):
+        return sum(G.edges[route[i], route[i+1]]['weight'] for i in range(len(route) - 1)) + G.edges[route[-1], route[0]]['weight']
+
+    def mutate(route):
+        i, j = random.sample(range(len(route)), 2)
+        route[i], route[j] = route[j], route[i]
+        return route
+
+    def crossover(route1, route2):
+        size = len(route1)
+        start, end = sorted(random.sample(range(size), 2))
+        child = [None] * size
+        child[start:end] = route1[start:end]
+        pointer = 0
+        for i in range(size):
+            if route2[i] not in child:
+                while child[pointer] is not None:
+                    pointer += 1
+                child[pointer] = route2[i]
+        return child
+
+    def genetic_algorithm(population, generations=1000, mutation_rate=0.01):
+        for _ in range(generations):
+            population = sorted(population, key=lambda route: fitness(route))
+            next_generation = population[:2]
+            for _ in range(len(population) // 2 - 1):
+                parents = random.sample(population[:10], 2)
+                child = crossover(parents[0], parents[1])
+                if random.random() < mutation_rate:
+                    child = mutate(child)
+                next_generation.append(child)
+            population = next_generation
+        return population[0], fitness(population[0])
+
+    nodes = list(G.nodes)
+    population = [random.sample(nodes, len(nodes)) for _ in range(100)]
+    best_route, best_distance = genetic_algorithm(population)
+    return best_route, best_distance
 
 # Função para resolver o VRP usando OR-Tools
 def resolver_vrp(pedidos_df, caminhoes_df, modo_roteirizacao, criterio_otimizacao):
@@ -137,6 +174,7 @@ def criar_mapa(pedidos_df):
         st.error("As colunas 'Latitude' e 'Longitude' não foram encontradas no DataFrame.")
     
     return mapa
+
 # Função para cadastrar caminhões
 def cadastrar_caminhoes():
     st.title("Cadastro de Caminhões da Frota")
@@ -316,7 +354,7 @@ def main():
             mapa = criar_mapa(pedidos_df)
             folium_static(mapa)
             
-                        # Gerar arquivo Excel com a roteirização feita
+            # Gerar arquivo Excel com a roteirização feita
             output_file_path = 'roterizacao_resultado.xlsx'
             pedidos_df.to_excel(output_file_path, index=False)
             st.write(f"Arquivo Excel com a roteirização feita foi salvo em: {output_file_path}")
