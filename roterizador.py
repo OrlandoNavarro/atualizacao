@@ -88,7 +88,6 @@ def resolver_tsp_genetico(G):
         i, j = random.sample(range(len(route)), 2)
         route[i], route[j] = route[j], route[i]
         return route
-
     def crossover(route1, route2):
         size = len(route1)
         start, end = sorted(random.sample(range(size), 2))
@@ -185,7 +184,7 @@ def cadastrar_caminhoes():
     except FileNotFoundError:
         caminhoes_df = pd.DataFrame(columns=['Placa', 'Transportador', 'Descrição Veículo', 'Capac. Cx', 'Capac. Kg', 'Disponível'])
     
-       # Upload do arquivo Excel de Caminhões
+      # Upload do arquivo Excel de Caminhões
     uploaded_caminhoes = st.file_uploader("Escolha o arquivo Excel de Caminhões", type=["xlsx", "xlsm"])
     
     if uploaded_caminhoes is not None:
@@ -349,7 +348,7 @@ def main():
             
             # Exibir resultado
             st.write("Dados dos pedidos:")
-            st.dataframe(pedidos_df)
+            st.dataframe(pedidos_df[['Placa', 'Nº Carga', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Qtde. dos Itens', 'Peso dos Itens']])
             
             # Criar e exibir mapa
             mapa = criar_mapa(pedidos_df)
