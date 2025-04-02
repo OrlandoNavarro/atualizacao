@@ -173,7 +173,7 @@ def cadastrar_caminhoes():
 def subir_roterizacoes():
     st.title("Upload de Planilhas de Roteirizações")
     
-    # Carregar DataFrame existente ou criar um novo
+        # Carregar DataFrame existente ou criar um novo
     try:
         roterizacao_df = pd.read_excel("roterizacao_dados.xlsx", engine='openpyxl')
     except FileNotFoundError:
@@ -224,16 +224,6 @@ def main():
         pedidos_df['Endereço Completo'] = pedidos_df['Endereço de Entrega'] + ', ' + pedidos_df['Bairro de Entrega'] + ', ' + pedidos_df['Cidade de Entrega']
         
         # Obter coordenadas geográficas
-        def obter_coordenadas_com_fallback(endereco):
-            coords = obter_coordenadas_osm(endereco)
-            if coords is None:
-                # Coordenadas manuais para endereços específicos
-                coordenadas_manuais = {
-                    "Rua Araújo Leite, 146, Centro, Piedade, São Paulo, Brasil": (-23.71241093449893, -47.41796911054548)
-                }
-                coords = coordenadas_manuais.get(endereco, (None, None))
-            return coords
-        
         with st.spinner('Aguarde, obtendo coordenadas de latitude e longitude...'):
             pedidos_df['Latitude'] = pedidos_df['Endereço Completo'].apply(lambda x: obter_coordenadas_com_fallback(x)[0])
             pedidos_df['Longitude'] = pedidos_df['Endereço Completo'].apply(lambda x: obter_coordenadas_com_fallback(x)[1])
