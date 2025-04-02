@@ -30,6 +30,17 @@ def obter_coordenadas_distancematrix(endereco):
         st.error(f"Erro ao tentar obter as coordenadas: {e}")
         return None
 
+# Função para obter coordenadas com fallback para coordenadas manuais
+def obter_coordenadas_com_fallback(endereco):
+    coords = obter_coordenadas_distancematrix(endereco)
+    if coords is None:
+        # Coordenadas manuais para endereços específicos
+        coordenadas_manuais = {
+            "Rua Araújo Leite, 146, Centro, Piedade, São Paulo, Brasil": (-23.71241093449893, -47.41796911054548)
+        }
+        coords = coordenadas_manuais.get(endereco, (None, None))
+    return coords
+
 # Função para calcular distância entre dois endereços usando a fórmula de Haversine
 def calcular_distancia(coords_1, coords_2):
     if coords_1 and coords_2:
