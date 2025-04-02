@@ -324,7 +324,7 @@ def main():
         rota_tsp = st.checkbox("Aplicar TSP")
         rota_vrp = st.checkbox("Aplicar VRP")
         
-        # Mostrar opções de roteirização após o upload da planilha
+                # Mostrar opções de roteirização após o upload da planilha
         if st.button("Roteirizar"):
             # Processamento dos dados
             pedidos_df = pedidos_df[pedidos_df['Peso dos Itens'] > 0]
@@ -338,7 +338,8 @@ def main():
             if rota_tsp:
                 G = criar_grafo_tsp(pedidos_df)
                 melhor_rota, menor_distancia = resolver_tsp_genetico(G)
-                st.write(f"Melhor rota TSP: {melhor_rota}")
+                st.write("Melhor rota TSP:")
+                st.write("\n".join(melhor_rota))
                 st.write(f"Menor distância TSP: {menor_distancia}")
                 pedidos_df['Ordem de Entrega TSP'] = pedidos_df['Endereço Completo'].apply(lambda x: melhor_rota.index(x) + 1)
             
