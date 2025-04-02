@@ -16,10 +16,11 @@ from geopy.distance import geodesic
 endereco_partida = "Avenida Antonio Ortega, 3604 - Pinhal, Cabreúva - SP"
 # Coordenadas geográficas do endereço de partida
 endereco_partida_coords = (-23.0838, -47.1336)  # Exemplo de coordenadas para Cabreúva, SP
+
 # Função para obter coordenadas geográficas de um endereço usando Distancematrix.ai API
 def obter_coordenadas_distancematrix(endereco):
     try:
-        api_key = 'YOUR_DISTANCEMATRIX_API_KEY'  # Substitua pela sua chave de API
+        api_key = 'uJGTJXYCN8M4HSU2vP4uj81LNgSLGgURUuQmhYPPgcJDJehWULWMR68lNwMhWPBb'  # Sua chave de API
         url = f"https://api.distancematrix.ai/maps/api/geocode/json?address={endereco}&key={api_key}"
         response = requests.get(url)
         if response.status_code == 200:
