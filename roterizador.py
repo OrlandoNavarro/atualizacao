@@ -13,43 +13,10 @@ endereco_partida = "Avenida Antonio Ortega, 3604 - Pinhal, Cabreúva - SP, São 
 # Coordenadas geográficas do endereço de partida
 endereco_partida_coords = (-23.0838, -47.1336)  # Exemplo de coordenadas para Cabreúva, SP
 
-# Função para obter coordenadas geográficas de um endereço usando Distancematrix.ai
-def obter_coordenadas_distancematrix(endereco):
-    try:
-        api_key = "Av0dQaviIu0PBfKgZAIzVVzhyUWLqtFNKU2ZjupgIPEtF55WP3IBNAUvsStg2lQ8"  # Sua chave de API
-        url = f"https://api.distancematrix.ai/maps/api/geocode/json?address={endereco}&key={api_key}"
-        response = requests.get(url)
-        data = response.json()
-        if 'status' in data and data['status'] == 'OK' and 'results' in data:
-            location = data['results'][0]['geometry']['location']
-            return (location['lat'], location['lng'])
-        else:
-            # Tentar variações do endereço
-            endereco_variacoes = [
-                endereco + ", Brasil",
-                endereco.replace("Rua", "R.") + ", Brasil",
-                endereco.replace("Avenida", "Av.") + ", Brasil",
-                endereco.replace("Praça", "Pç.") + ", Brasil",
-                endereco.replace("Estrada", "Est.") + ", Brasil",
-                endereco.replace("Alameda", "Al.") + ", Brasil"
-            ]
-            for variacao in endereco_variacoes:
-                url = f"https://api.distancematrix.ai/maps/api/geocode/json?address={variacao}&key={api_key}"
-                response = requests.get(url)
-                data = response.json()
-                if 'status' in data and data['status'] == 'OK' and 'results' in data:
-                    location = data['results'][0]['geometry']['location']
-                    return (location['lat'], location['lng'])
-            st.error(f"Não foi possível obter as coordenadas para o endereço: {endereco}. Status: {data.get('status', 'Desconhecido')}")
-            return None
-    except Exception as e:
-        st.error(f"Erro ao tentar obter as coordenadas: {e}")
-        return None
-
 # Função para obter coordenadas geográficas de um endereço usando OpenCage
 def obter_coordenadas_opencage(endereco):
     try:
-        api_key = "YOUR_OPENCAGE_API_KEY"  # Substitua pela sua chave de API do OpenCage
+        api_key = "6f522c67add14152926990afbe127384"  # Sua chave de API do OpenCage
         url = f"https://api.opencagedata.com/geocode/v1/json?q={endereco}&key={api_key}"
         response = requests.get(url)
         data = response.json()
@@ -65,9 +32,7 @@ def obter_coordenadas_opencage(endereco):
 
 # Função para obter coordenadas com fallback para coordenadas manuais
 def obter_coordenadas_com_fallback(endereco):
-    coords = obter_coordenadas_distancematrix(endereco)
-    if coords is None:
-        coords = obter_coordenadas_opencage(endereco)
+    coords = obter_coordenadas_opencage(endereco)
     if coords is None:
         # Coordenadas manuais para endereços específicos
         coordenadas_manuais = {
@@ -175,7 +140,7 @@ def cadastrar_caminhoes():
     except FileNotFoundError:
         caminhoes_df = pd.DataFrame(columns=['Placa', 'Transportador', 'Descrição Veículo', 'Capac. Cx', 'Capac. Kg', 'Disponível'])
     
-        # Upload do arquivo Excel de Caminhões
+    # Upload do arquivo Excel de Caminhões
     uploaded_caminhoes = st.file_uploader("Escolha o arquivo Excel de Caminhões", type=["xlsx", "xlsm"])
     
     if uploaded_caminhoes is not None:
@@ -314,6 +279,112 @@ def main():
             # Alocar pedidos nos caminhões respeitando os limites de peso e quantidade de caixas
             pedidos_df = otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, percentual_pedidos)
             
+                # Carregar DataFrame existente ou criar um novo
+    try:
+        roterizacao_df = pd.read_excel("roterizacao_dados.xlsx", engine='openpyxl')
+    except FileNotFoundError:
+        roterizacao_df = pd.DataFrame(columns=['Placa', 'Nº Carga', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Qtde. dos Itens', 'Peso dos Itens'])
+    
+    # Upload do arquivo Excel de Roteirizações
+    uploaded_roterizacao = st.file_uploader("Escolha o arquivo Excel de Roteirizações", type=["xlsx", "xlsm"])
+    
+    if uploaded_roterizacao is not None:
+        novo_roterizacao_df = pd.read_excel(uploaded_roterizacao, engine='openpyxl')
+        
+        # Verificar se as colunas necessárias estão presentes
+        colunas_roterizacao = ['Placa', 'Nº Carga', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Qtde. dos Itens', 'Peso dos Itens']
+        
+        colunas_faltando = [col for col in colunas_roterizacao if col not in novo_roterizacao_df.columns]
+        if colunas_faltando:
+            st.error(f"As seguintes colunas estão faltando na planilha de roteirizações: {', '.join(colunas_faltando)}")
+            return
+        
+        # Botão para carregar a roteirização
+        if st.button("Carregar Roteirização"):
+            roterizacao_df = pd.concat([roterizacao_df, novo_roterizacao_df], ignore_index=True)
+            roterizacao_df.to_excel("roterizacao_dados.xlsx", index=False)
+            st.success("Roteirização carregada com sucesso!")
+    
+    # Botão para limpar a roteirização
+    if st.button("Limpar Roteirização"):
+        roterizacao_df = pd.DataFrame(columns=colunas_roterizacao)
+        roterizacao_df.to_excel("roterizacao_dados.xlsx", index=False)
+        st.success("Roteirização limpa com sucesso!")
+    
+    # Exibir dados da planilha de roteirizações
+    st.subheader("Dados da Roteirização")
+    st.dataframe(roterizacao_df)
+
+# Função principal para o painel interativo
+def main():
+    st.title("Roteirizador de Pedidos")
+    
+    # Upload do arquivo Excel de Pedidos
+    uploaded_pedidos = st.file_uploader("Escolha o arquivo Excel de Pedidos", type=["xlsx", "xlsm"])
+    
+    if uploaded_pedidos is not None:
+        # Leitura das planilhas
+        pedidos_df = pd.read_excel(uploaded_pedidos, engine='openpyxl')
+        
+        # Formar o endereço completo
+        pedidos_df['Endereço Completo'] = pedidos_df['Endereço de Entrega'] + ', ' + pedidos_df['Bairro de Entrega'] + ', ' + pedidos_df['Cidade de Entrega']
+        
+        # Obter coordenadas geográficas
+        with st.spinner('Aguarde, obtendo coordenadas de latitude e longitude...'):
+            pedidos_df['Latitude'] = pedidos_df['Endereço Completo'].apply(lambda x: obter_coordenadas_com_fallback(x)[0])
+            pedidos_df['Longitude'] = pedidos_df['Endereço Completo'].apply(lambda x: obter_coordenadas_com_fallback(x)[1])
+        
+        # Verificar se as coordenadas foram obtidas corretamente
+        if pedidos_df['Latitude'].isnull().any() or pedidos_df['Longitude'].isnull().any():
+            st.error("Não foi possível obter as coordenadas para alguns endereços. Verifique os endereços e tente novamente.")
+            return
+        
+        # Carregar dados da frota cadastrada
+        try:
+            caminhoes_df = pd.read_excel("caminhoes_frota.xlsx", engine='openpyxl')
+        except FileNotFoundError:
+            st.error("Nenhum caminhão cadastrado. Por favor, cadastre caminhões primeiro.")
+            return
+        
+        # Verificar se as colunas necessárias estão presentes
+        colunas_pedidos = ['Nº Carga', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Qtde. dos Itens', 'Peso dos Itens']
+        
+        colunas_faltando_pedidos = [col for col in colunas_pedidos if col not in pedidos_df.columns]
+        if colunas_faltando_pedidos:
+            st.error(f"As seguintes colunas estão faltando na planilha de pedidos: {', '.join(colunas_faltando_pedidos)}")
+            return
+        
+        colunas_caminhoes = ['Placa', 'Transportador', 'Descrição Veículo', 'Capac. Cx', 'Capac. Kg', 'Disponível']
+        colunas_faltando_caminhoes = [col for col in colunas_caminhoes if col não estiverem presentes no caminhoes_df.columns]
+        if colunas_faltando_caminhoes:
+            st.error(f"As seguintes colunas estão faltando na planilha da frota: {', '.join(colunas_faltando_caminhoes)}")
+            return
+        
+        # Filtrar caminhões ativos
+        caminhoes_df = caminhoes_df[caminhoes_df['Disponível'] == 'Ativo']
+        
+        # Mostrar opções de roteirização após o upload da planilha
+        if st.button("Roteirizar"):
+            # Processamento dos dados
+            pedidos_df = pedidos_df[pedidos_df['Peso dos Itens'] > 0]
+            
+            # Opções de agrupamento por região
+            n_clusters = st.slider("Número de regiões para agrupar", min_value=1, max_value=10, value=5)
+            pedidos_df = agrupar_por_regiao(pedidos_df, n_clusters)
+            
+            # Definir capacidade da frota
+            percentual_frota = st.slider("Capacidade da frota a ser usada (%)", min_value=0, max_value=100, value=100)
+            
+            # Definir percentual de pedidos alocados por veículo
+            percentual_pedidos = st.slider("Percentual de pedidos alocados por veículo (%)", min_value=0, max_value=100, value=100)
+            
+            # Parâmetros de roteirização
+            modo_roteirizacao = st.selectbox("Modo de roteirização", ["Frota Mínima", "Balanceado"])
+            criterio_otimizacao = st.selectbox("Critério de otimização", ["Menor Tempo", "Menor Distância", "Menor Custo"])
+            
+            # Alocar pedidos nos caminhões respeitando os limites de peso e quantidade de caixas
+            pedidos_df = otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, percentual_pedidos)
+            
             # Opções de roteirização
             rota_tsp = st.checkbox("Aplicar TSP")
             rota_vrp = st.checkbox("Aplicar VRP")
@@ -360,3 +431,4 @@ def main():
         subir_roterizacoes()
 
 main()
+
