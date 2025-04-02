@@ -1,6 +1,5 @@
+import requests
 import pandas as pd
-import geopy
-from geopy.geocoders import Nominatim
 import streamlit as st
 from sklearn.cluster import KMeans
 import networkx as nx
@@ -14,26 +13,17 @@ endereco_partida = "Avenida Antonio Ortega, 3604 - Pinhal, Cabreúva - SP, São 
 # Coordenadas geográficas do endereço de partida
 endereco_partida_coords = (-23.0838, -47.1336)  # Exemplo de coordenadas para Cabreúva, SP
 
-# Função para obter coordenadas geográficas de um endereço usando geopy e Nominatim
-def obter_coordenadas_osm(endereco):
+# Função para obter coordenadas geográficas de um endereço usando Distancematrix.ai
+def obter_coordenadas_distancematrix(endereco):
     try:
-        geolocator = Nominatim(user_agent="myGeocoder", timeout=10)  # Aumentar o tempo limite para 10 segundos
-        location = geolocator.geocode(endereco + ", São Paulo, Brasil")
-        if location:
-            return (location.latitude, location.longitude)
+        api_key = "Av0dQaviIu0PBfKgZAIzVVzhyUWLqtFNKU2ZjupgIPEtF55WP3IBNAUvsStg2lQ8"  # Sua chave de API
+        url = f"https://api.distancematrix.ai/maps/api/geocode/json?address={endereco}&key={api_key}"
+        response = requests.get(url)
+        data = response.json()
+        if data['status'] == 'OK':
+            location = data['results'][0]['geometry']['location']
+            return (location['lat'], location['lng'])
         else:
-            # Tentar variações do endereço
-            endereco_variacoes = [
-                endereco.replace("Rua", "R.") + ", São Paulo, Brasil",
-                endereco.replace("Avenida", "Av.") + ", São Paulo, Brasil",
-                endereco.replace("Praça", "Pç.") + ", São Paulo, Brasil",
-                endereco.replace("Estrada", "Est.") + ", São Paulo, Brasil",
-                endereco.replace("Alameda", "Al.") + ", São Paulo, Brasil"
-            ]
-            for variacao in endereco_variacoes:
-                location = geolocator.geocode(variacao)
-                if location:
-                    return (location.latitude, location.longitude)
             st.error(f"Não foi possível obter as coordenadas para o endereço: {endereco}")
             return None
     except Exception as e:
