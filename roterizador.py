@@ -131,6 +131,7 @@ def criar_mapa(pedidos_df):
         st.error("As colunas 'Latitude' e 'Longitude' não foram encontradas no DataFrame.")
     
     return mapa
+
 # Função para cadastrar caminhões
 def cadastrar_caminhoes():
     st.title("Cadastro de Caminhões da Frota")
@@ -180,7 +181,7 @@ def subir_roterizacoes():
     except FileNotFoundError:
         roterizacao_df = pd.DataFrame(columns=['Placa', 'Nº Carga', 'Nº Pedido', 'Cód. Cliente', 'Nome Cliente', 'Grupo Cliente', 'Endereço de Entrega', 'Bairro de Entrega', 'Cidade de Entrega', 'Qtde. dos Itens', 'Peso dos Itens'])
     
-    # Upload do arquivo Excel de Roteirizações
+     # Upload do arquivo Excel de Roteirizações
     uploaded_roterizacao = st.file_uploader("Escolha o arquivo Excel de Roteirizações", type=["xlsx", "xlsm"])
     
     if uploaded_roterizacao is not None:
