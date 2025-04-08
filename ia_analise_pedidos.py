@@ -10,6 +10,7 @@ from config import endereco_partida, endereco_partida_coords
 import math
 import pandas as pd
 import logging
+from geopy.geocoders import Nominatim
 
 def obter_coordenadas_opencage(endereco):
     """
@@ -30,15 +31,36 @@ def obter_coordenadas_opencage(endereco):
         st.error(f"Erro ao tentar obter as coordenadas: {e}")
         return None
 
+def obter_coordenadas_nominatim(endereco):
+    """
+    Obtém as coordenadas de um endereço utilizando a API do Nominatim (OpenStreetMap).
+    """
+    try:
+        geolocator = Nominatim(user_agent="my_geocoder")
+        location = geolocator.geocode(endereco)
+        if location:
+            return (location.latitude, location.longitude)
+        else:
+            st.error(f"Não foi possível obter as coordenadas para o endereço: {endereco} usando Nominatim.")
+            return None
+    except Exception as e:
+        st.error(f"Erro ao tentar obter as coordenadas com Nominatim: {e}")
+        return None
+
 def obter_coordenadas_com_fallback(endereco, coordenadas_salvas):
     """
     Retorna as coordenadas salvas para um endereço ou tenta obtê-las via OpenCage.
-    Se não obtiver, utiliza um dicionário de coordenadas manuais pré-definido.
+    Se não obtiver, utiliza a API do Nominatim como fallback adicional.
     """
     if endereco in coordenadas_salvas:
         return coordenadas_salvas[endereco]
     
+    # Tenta obter as coordenadas via OpenCage
     coords = obter_coordenadas_opencage(endereco)
+    if coords is None:
+        # Tenta obter as coordenadas via Nominatim
+        coords = obter_coordenadas_nominatim(endereco)
+    
     if coords is None:
         # Exemplo de coordenadas manuais para endereços específicos
         coordenadas_manuais = {
