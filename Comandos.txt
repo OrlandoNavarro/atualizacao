@@ -1,4 +1,0 @@
-streamlit run roterizador.py
-
-
-cd C:\Users\Orlando\Desktop\Python
