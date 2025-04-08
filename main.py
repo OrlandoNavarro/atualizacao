@@ -176,6 +176,9 @@ def main():
                     st.error("A coluna 'Região' não foi criada ou está vazia. Verifique os dados e a função 'ia.agrupar_por_regiao'.")
                     st.stop()
 
+                # Passa o DataFrame para a função de otimização
+                pedidos_df = ia.otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, max_pedidos, n_clusters)
+
                 # Define as placas associando cada caminhão a uma única região
                 regioes = pedidos_df['Região'].unique()
                 placas_disponiveis = caminhoes_df['Placa'].tolist()
