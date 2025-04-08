@@ -4,6 +4,7 @@ from streamlit_folium import folium_static
 import requests
 import time
 import datetime
+import os  # Importa o módulo para verificar a existência de arquivos
 
 from gerenciamento_frota import cadastrar_caminhoes
 from subir_pedidos import processar_pedidos, salvar_coordenadas
@@ -269,15 +270,24 @@ def main():
 
             st.dataframe(pedidos_df)
             if st.button("Salvar alterações na planilha"):
+                # Garante que o diretório "database" exista
+                os.makedirs("database", exist_ok=True)
+                
+                # Salva o arquivo no caminho especificado
                 pedidos_df.to_excel("database/Pedidos.xlsx", index=False)
                 st.success("Planilha editada e salva com sucesso!")
-            with open("database/Pedidos.xlsx", "rb") as file:
-                st.download_button(
-                    "Baixar planilha de Pedidos",
-                    data=file,
-                    file_name="Pedidos.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
+            
+            # Verifica se o arquivo existe antes de tentar abri-lo
+            if os.path.exists("database/Pedidos.xlsx"):
+                with open("database/Pedidos.xlsx", "rb") as file:
+                    st.download_button(
+                        "Baixar planilha de Pedidos",
+                        data=file,
+                        file_name="Pedidos.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    )
+            else:
+                st.error("O arquivo 'Pedidos.xlsx' não foi encontrado. Salve a planilha antes de tentar baixá-la.")
     
     elif menu_opcao == "API REST":
         st.header("Interação com API REST")
