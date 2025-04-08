@@ -40,7 +40,7 @@ def main():
     # Opções de configuração
     n_clusters = st.slider("Número de regiões para agrupar", min_value=1, max_value=10, value=5)
     percentual_frota = st.slider("Capacidade da frota a ser usada (%)", min_value=0, max_value=100, value=100)
-    max_pedidos = st.slider("Número máximo de pedidos por veículo", min_value=1, max_value=20, value=10)
+    max_pedidos = st.slider("Número máximo de pedidos por veículo", min_value=1, max_value=30, value=12)
     aplicar_tsp = st.checkbox("Aplicar TSP")
     aplicar_vrp = st.checkbox("Aplicar VRP")
     

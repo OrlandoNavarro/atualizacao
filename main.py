@@ -54,11 +54,12 @@ def main():
             pedidos_df['Longitude'] = pedidos_df['Longitude'].fillna(0)
             salvar_coordenadas(coordenadas_salvas)
             st.dataframe(pedidos_df)
+            st.write("Cabeçalho da planilha:", list(pedidos_df.columns))
             
             st.markdown("### Configurações para Roteirização")
             n_clusters = st.slider("Número de regiões para agrupar", min_value=1, max_value=10, value=3)
             percentual_frota = st.slider("Capacidade da frota a ser usada (%)", min_value=0, max_value=100, value=100)
-            max_pedidos = st.slider("Número máximo de pedidos por veículo", min_value=1, max_value=20, value=5)
+            max_pedidos = st.slider("Número máximo de pedidos por veículo", min_value=1, max_value=30, value=12)
             aplicar_tsp = st.checkbox("Aplicar TSP")
             
             # Bloco para explicar o TSP
@@ -107,6 +108,25 @@ def main():
                     rota_vrp = ia.resolver_vrp(pedidos_df, caminhoes_df)
                     st.write(f"Melhor rota VRP: {rota_vrp}")
                 
+                # Define a sequência desejada de colunas
+                colunas_desejadas = [
+                    "Placa",
+                    "Carga",
+                    "N Pedido",
+                    "Cod. Cliente",
+                    "Nome Cliente",
+                    "Endereco Completo",
+                    "Regiao",
+                    "Qtde dos Itens",
+                    "Peso dos Itens",
+                    "Latitude",
+                    "Longitude",
+                    "Ordem de Entrega TSP"
+                ]
+
+                # Reordena o DataFrame conforme a sequência definida
+                pedidos_df = pedidos_df[colunas_desejadas]
+
                 st.write("Dados dos Pedidos:")
                 st.dataframe(pedidos_df)
                 mapa = ia.criar_mapa(pedidos_df)
