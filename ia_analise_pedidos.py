@@ -11,8 +11,6 @@ import math
 import pandas as pd
 import logging
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
-
 def obter_coordenadas_opencage(endereco):
     """
     Obtém as coordenadas de um endereço utilizando a API do OpenCage.
@@ -142,22 +140,27 @@ def resolver_vrp(pedidos_df, caminhoes_df):
     except ImportError:
         return "Erro: OR-Tools não está instalado. Instale com: pip3 install ortools"
 
+    # Obtenha as coordenadas dos pedidos
     coords = list(zip(pedidos_df['Latitude'], pedidos_df['Longitude']))
     if not coords:
         return "Sem pedidos para roteirização."
 
-    depot = 0
+    depot = 0  # Usando o primeiro pedido (ou defina um depot específico)
+
     def calcular_dist(i, j):
         return int(math.sqrt((coords[i][0] - coords[j][0])**2 + (coords[i][1] - coords[j][1])**2) * 1000)
 
     N = len(coords)
     distance_matrix = [[calcular_dist(i, j) for j in range(N)] for i in range(N)]
+
     num_vehicles = len(caminhoes_df)
     if num_vehicles < 1:
         return "Nenhum caminhão disponível para a roteirização."
 
+    # Cria o index manager e o modelo de roteamento
     manager = pywrapcp.RoutingIndexManager(N, num_vehicles, depot)
     routing = pywrapcp.RoutingModel(manager)
+
     def distance_callback(from_index, to_index):
         from_node = manager.IndexToNode(from_index)
         to_node = manager.IndexToNode(to_index)
@@ -165,8 +168,10 @@ def resolver_vrp(pedidos_df, caminhoes_df):
 
     transit_callback_index = routing.RegisterTransitCallback(distance_callback)
     routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
+
+    # Parâmetros de busca
     search_parameters = pywrapcp.DefaultRoutingSearchParameters()
-    search_parameters.first_solution_strategy = routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
+    search_parameters.first_solution_strategy = (routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC)
 
     solution = routing.SolveWithParameters(search_parameters)
     if solution:
@@ -183,6 +188,47 @@ def resolver_vrp(pedidos_df, caminhoes_df):
     else:
         return "Não foi encontrada solução para o problema VRP."
 
+def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, max_pedidos, n_clusters):
+    """
+    Otimiza a alocação dos pedidos aos caminhões disponíveis, agrupando os pedidos em regiões,
+    atribuindo números de carga e placas.
+    """
+    # Inicializa as colunas
+    pedidos_df['Carga'] = 0
+    pedidos_df['Placa'] = ""
+    carga_numero = 1
+    
+    # Ajusta a capacidade dos caminhões conforme o percentual informado
+    caminhoes_df['Capac. Kg'] *= (percentual_frota / 100)
+    caminhoes_df['Capac. Cx'] *= (percentual_frota / 100)
+    # Filtra somente caminhões com disponibilidade "Ativo"
+    caminhoes_df = caminhoes_df[caminhoes_df['Disponível'] == 'Ativo']
+    
+    # Agrupa os pedidos em regiões
+    pedidos_df = agrupar_por_regiao(pedidos_df, n_clusters)
+    
+    for regiao in pedidos_df['Regiao'].unique():
+        pedidos_regiao = pedidos_df[pedidos_df['Regiao'] == regiao]
+        for _, caminhao in caminhoes_df.iterrows():
+            capacidade_peso = caminhao['Capac. Kg']
+            capacidade_caixas = caminhao['Capac. Cx']
+            pedidos_alocados = pedidos_regiao[
+                (pedidos_regiao['Peso dos Itens'] <= capacidade_peso) &
+                (pedidos_regiao['Qtde. dos Itens'] <= capacidade_caixas)
+            ]
+            pedidos_alocados = pedidos_alocados.sample(n=min(max_pedidos, len(pedidos_alocados)))
+            if not pedidos_alocados.empty:
+                pedidos_df.loc[pedidos_alocados.index, 'Carga'] = carga_numero
+                pedidos_df.loc[pedidos_alocados.index, 'Placa'] = caminhao['Placa']
+                capacidade_peso -= pedidos_alocados['Peso dos Itens'].sum()
+                capacidade_caixas -= pedidos_alocados['Qtde. dos Itens'].sum()
+                carga_numero += 1
+    
+    if pedidos_df['Placa'].isnull().any() or pedidos_df['Carga'].isnull().any():
+        st.error("Não foi possível atribuir placas ou números de carga a alguns pedidos.")
+    
+    return pedidos_df
+
 def agrupar_por_regiao(pedidos_df, n_clusters):
     """
     Agrupa os pedidos em regiões usando K-Means com base nas colunas de Latitude e Longitude.
@@ -194,35 +240,6 @@ def agrupar_por_regiao(pedidos_df, n_clusters):
     coords = pedidos_df[['Latitude', 'Longitude']].values
     kmeans = KMeans(n_clusters=n_clusters, random_state=42)
     pedidos_df['Regiao'] = kmeans.fit_predict(coords)
-    return pedidos_df
-
-def definir_ordem_por_carga(pedidos_df, melhor_rota):
-    """
-    Define a coluna 'Ordem de Entrega TSP' baseada na coluna "Carga".
-    Para cada carga, os pedidos serão ordenados conforme a ordem do TSP (melhor_rota)
-    e terão sua sequência numérica definida no formato "Carga-Seq".
-
-    Exemplo: Para a carga "1266847" com 5 pedidos, os números serão:
-             "1266847-1", "1266847-2", ..., "1266847-5".
-
-    Parâmetros:
-      pedidos_df (DataFrame): Contém a coluna 'Carga' e 'Endereço Completo'.
-      melhor_rota (list): Lista de endereços (strings) na ordem definida pelo algoritmo TSP.
-
-    Retorna:
-      DataFrame: pedidos_df com a coluna 'Ordem de Entrega TSP' atualizada.
-    """
-    rota_indices = {endereco: idx for idx, endereco in enumerate(melhor_rota)}
-    pedidos_df['Ordem de Entrega TSP'] = ""
-    for carga in pedidos_df['Carga'].unique():
-        mask = pedidos_df['Carga'] == carga
-        df_carga = pedidos_df.loc[mask].copy()
-        df_carga = df_carga.sort_values(
-            by='Endereço Completo',
-            key=lambda col: col.map(lambda x: rota_indices.get(x, float('inf')))
-        )
-        for seq, idx in enumerate(df_carga.index, start=1):
-            pedidos_df.at[idx, 'Ordem de Entrega TSP'] = f"{carga}-{seq}"
     return pedidos_df
 
 def criar_mapa(pedidos_df):
@@ -243,69 +260,3 @@ def criar_mapa(pedidos_df):
         icon=folium.Icon(color='red')
     ).add_to(mapa)
     return mapa
-
-def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, max_pedidos, n_clusters):
-    """
-    Otimiza a alocação dos pedidos aos caminhões disponíveis, agrupando os pedidos em regiões,
-    atribuindo números de carga e placas.
-    """
-    # Inicializa as colunas
-    pedidos_df['Carga'] = 0
-    pedidos_df['Placa'] = ""
-    carga_numero = 1
-
-    # Ajusta a capacidade dos caminhões conforme o percentual informado
-    caminhoes_df['Capac. Kg'] *= (percentual_frota / 100)
-    caminhoes_df['Capac. Cx'] *= (percentual_frota / 100)
-    # Filtra somente caminhões com disponibilidade "Ativo"
-    caminhoes_df = caminhoes_df[caminhoes_df['Disponível'] == 'Ativo']
-
-    # Agrupa os pedidos em regiões
-    pedidos_df = agrupar_por_regiao(pedidos_df, n_clusters)
-
-    for regiao in pedidos_df['Regiao'].unique():
-        pedidos_regiao = pedidos_df[pedidos_df['Regiao'] == regiao]
-        for _, caminhao in caminhoes_df.iterrows():
-            capacidade_peso = caminhao['Capac. Kg']
-            capacidade_caixas = caminhao['Capac. Cx']
-            pedidos_alocados = pedidos_regiao[
-                (pedidos_regiao['Peso dos Itens'] <= capacidade_peso) &
-                (pedidos_regiao['Qtde. dos Itens'] <= capacidade_caixas)
-            ]
-            pedidos_alocados = pedidos_alocados.sample(n=min(max_pedidos, len(pedidos_alocados)))
-            if not pedidos_alocados.empty:
-                pedidos_df.loc[pedidos_alocados.index, 'Carga'] = carga_numero
-                pedidos_df.loc[pedidos_alocados.index, 'Placa'] = caminhao['Placa']
-                capacidade_peso -= pedidos_alocados['Peso dos Itens'].sum()
-                capacidade_caixas -= pedidos_alocados['Qtde. dos Itens'].sum()
-                carga_numero += 1
-
-    # Se houver pedidos sem placa ou carga, exibe um erro
-    if pedidos_df['Placa'].isnull().any() or pedidos_df['Carga'].isnull().any():
-        st.error("Não foi possível atribuir placas ou números de carga a alguns pedidos.")
-
-    # Define a sequência desejada de colunas para exportação
-    colunas_desejadas = [
-        "Placa",
-        "Carga",
-        "N Pedido",
-        "Cod. Cliente",
-        "Nome Cliente",
-        "Endereco Completo",
-        "Regiao",
-        "Qtde dos Itens",
-        "Peso dos Itens",
-        "Latitude",
-        "Longitude",
-        "Ordem de Entrega TSP"
-    ]
-
-    # Para cada coluna desejada que não existe, crie-a com valor vazio
-    for col in colunas_desejadas:
-        if col not in pedidos_df.columns:
-            pedidos_df[col] = ""
-
-    # Reordena o DataFrame conforme a sequência definida
-    pedidos_df = pedidos_df[colunas_desejadas]
-    
-    return pedidos_df

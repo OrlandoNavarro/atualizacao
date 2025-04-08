@@ -19,7 +19,6 @@ def definir_ordem_por_carga(pedidos_df, ordem_tsp):
       ordem_tsp (list): Lista com os endereços na ordem definida pelo algoritmo TSP.
       
     Retorna:
-    
       DataFrame: Com a coluna 'Ordem de Entrega TSP' atualizada.
     """
     # Cria um dicionário para mapeamento do endereço para sua posição na melhor rota
@@ -88,7 +87,14 @@ def main():
             pedidos_df['Latitude'] = pedidos_df['Latitude'].fillna(0)
             pedidos_df['Longitude'] = pedidos_df['Longitude'].fillna(0)
             salvar_coordenadas(coordenadas_salvas)
+            
+            # Verifica se a coluna "Carga" existe e, se existir, define "N Carga" com os mesmos dados
+            if "Carga" in pedidos_df.columns:
+                pedidos_df["N Carga"] = pedidos_df["Carga"]
+                pedidos_df = pedidos_df.drop(columns=["Carga"])
+            
             st.dataframe(pedidos_df)
+            st.write("Cabeçalho da planilha:", list(pedidos_df.columns))
             
             st.markdown("### Configurações para Roteirização")
             n_clusters = st.slider("Número de regiões para agrupar", min_value=1, max_value=10, value=3)
@@ -96,13 +102,15 @@ def main():
             max_pedidos = st.slider("Número máximo de pedidos por veículo", min_value=1, max_value=30, value=12)
             aplicar_tsp = st.checkbox("Aplicar TSP")
             
+            # Bloco para explicar o TSP
             st.markdown("""
             **Aplicar TSP:**  
             Utiliza um algoritmo genético para encontrar a rota que minimiza a distância total entre todos os pontos de entrega.
             """)
-            
+
             aplicar_vrp = st.checkbox("Aplicar VRP")
-            
+
+            # Bloco para explicar o VRP
             st.markdown("""
             **Aplicar VRP:**  
             Distribui os pedidos entre os veículos disponíveis, respeitando as restrições de capacidade e minimizando a distância percorrida.
@@ -133,8 +141,8 @@ def main():
                     st.write("\n".join(melhor_rota))
                     st.write(f"Menor distância TSP: {menor_distancia}")
                     
-                    # Chama a função definida em ia_analise_pedidos.py para gerar a ordem de entrega com base em "Carga"
-                    pedidos_df = ia.definir_ordem_por_carga(pedidos_df, melhor_rota)
+                    # Define a ordem de entrega baseada no campo 'Carga'
+                    pedidos_df = definir_ordem_por_carga(pedidos_df, melhor_rota)
                 
                 if aplicar_vrp:
                     rota_vrp = ia.resolver_vrp(pedidos_df, caminhoes_df)
@@ -186,6 +194,12 @@ def main():
             pedidos_df['Latitude'] = pedidos_df['Latitude'].fillna(0)
             pedidos_df['Longitude'] = pedidos_df['Longitude'].fillna(0)       
             salvar_coordenadas(coordenadas_salvas)
+            
+            # Verifica se a coluna "Carga" existe e, se existir, define "N Carga" com os mesmos dados
+            if "Carga" in pedidos_df.columns:
+                pedidos_df["N Carga"] = pedidos_df["Carga"]
+                pedidos_df = pedidos_df.drop(columns=["Carga"])
+            
             st.dataframe(pedidos_df)
             if st.button("Salvar alterações na planilha"):
                 pedidos_df.to_excel("database/Pedidos.xlsx", index=False)
