@@ -132,37 +132,61 @@ def main():
                 for progresso in range(100):
                     time.sleep(0.05)
                     progress_bar.progress(progresso + 1)
-                
+
+                # Filtra pedidos com peso maior que 0
                 pedidos_df = pedidos_df[pedidos_df['Peso dos Itens'] > 0]
-                
+
+                # Verifica se as colunas necessárias existem
+                if 'Placa' not in pedidos_df.columns or 'Carga' not in pedidos_df.columns:
+                    st.error("As colunas 'Placa' e 'Carga' são necessárias para a roteirização.")
+                    st.stop()
+
+                # Garante que cada carga tenha apenas uma placa
+                cargas_por_placa = pedidos_df.groupby('Carga')['Placa'].nunique()
+                cargas_invalidas = cargas_por_placa[cargas_por_placa > 1]
+
+                if not cargas_invalidas.empty:
+                    st.error("Erro: Cada carga deve estar associada a apenas uma placa. Verifique os dados.")
+                    for carga, num_placas in cargas_invalidas.items():
+                        st.write(f"- Carga {carga}: {num_placas} placas associadas")
+                    st.stop()
+
                 try:
+                    # Carrega os dados da frota
                     caminhoes_df = pd.read_excel("database/caminhoes_frota.xlsx", engine="openpyxl")
                 except FileNotFoundError:
                     st.error("Nenhum caminhão cadastrado. Cadastre a frota na opção 'Cadastro da Frota'.")
                     return
-                
+
+                # Agrupa pedidos por região respeitando o número máximo de regiões configurado
                 pedidos_df = ia.agrupar_por_regiao(pedidos_df, n_clusters)
+
+                # Otimiza o uso da frota com base nas restrições
                 pedidos_df = ia.otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, max_pedidos, n_clusters)
-                
+
+                # Aplica o algoritmo TSP, se selecionado
                 if aplicar_tsp:
                     G = ia.criar_grafo_tsp(pedidos_df)
                     melhor_rota, menor_distancia = ia.resolver_tsp_genetico(G)
                     st.write("Melhor rota TSP:")
                     st.write("\n".join(melhor_rota))
                     st.write(f"Menor distância TSP: {menor_distancia}")
-                    
+
                     # Define a ordem de entrega baseada no campo 'Carga'
                     pedidos_df = definir_ordem_por_carga(pedidos_df, melhor_rota)
-                
+
+                # Aplica o algoritmo VRP, se selecionado
                 if aplicar_vrp:
                     rota_vrp = ia.resolver_vrp(pedidos_df, caminhoes_df)
                     st.write(f"Melhor rota VRP: {rota_vrp}")
-                
+
+                # Exibe os dados dos pedidos e o mapa
                 st.write("Dados dos Pedidos:")
                 st.dataframe(pedidos_df)
                 mapa = ia.criar_mapa(pedidos_df)
                 folium_static(mapa)
-                                        
+
+                # Salva o resultado da roteirização
                 output_file_path = "database/roterizacao_resultado.xlsx"
                 pedidos_df.to_excel(output_file_path, index=False)
                 st.write(f"Arquivo salvo: {output_file_path}")
