@@ -31,7 +31,7 @@ def gerar_matriz_distancias(pedidos_df):
 
 def tsp_nearest_neighbor(pedidos_df):
     """
-    Heurística do vizinho mais próximo para TSP; retorna ordem dos índices.
+    Aplica a heurística do vizinho mais próximo para TSP e retorna a ordem dos índices.
     """
     matriz = gerar_matriz_distancias(pedidos_df)
     n = len(matriz)
@@ -42,6 +42,7 @@ def tsp_nearest_neighbor(pedidos_df):
     rota = [start]
     visited[start] = True
     ultimo = start
+    # Para cada ponto, busca o mais próximo que ainda não foi visitado
     for _ in range(n - 1):
         proximos = [(matriz[ultimo][j], j) for j in range(n) if not visited[j]]
         if not proximos:
@@ -54,7 +55,7 @@ def tsp_nearest_neighbor(pedidos_df):
 
 def route_distance(rota, matriz):
     """
-    Calcula a distância total dada uma rota e a matriz de distâncias.
+    Calcula a distância total de uma rota utilizando a matriz de distâncias.
     """
     dist = 0
     for i in range(len(rota) - 1):
@@ -63,7 +64,7 @@ def route_distance(rota, matriz):
 
 def otimizacao_2opt(rota, matriz):
     """
-    Melhora uma rota TSP usando a heurística 2-opt.
+    Melhora a rota do TSP utilizando a heurística 2-opt.
     """
     best = rota
     improved = True
@@ -71,7 +72,7 @@ def otimizacao_2opt(rota, matriz):
         improved = False
         for i in range(1, len(rota) - 2):
             for j in range(i + 1, len(rota)):
-                if j - i == 1:
+                if j - i == 1:  # segue vizinhos adjacentes sem alteração
                     continue
                 new_route = best[:]
                 new_route[i:j] = best[j - 1:i - 1:-1]
@@ -83,7 +84,7 @@ def otimizacao_2opt(rota, matriz):
 
 def agrupar_por_regiao(pedidos_df, n_clusters=3):
     """
-    Agrupa os pedidos em regiões usando K-Means e adiciona a coluna 'Regiao'.
+    Agrupa os pedidos em regiões usando K-Means e adiciona a coluna 'Regiao' no DataFrame.
     """
     if pedidos_df.empty:
         pedidos_df['Regiao'] = []
@@ -93,8 +94,7 @@ def agrupar_por_regiao(pedidos_df, n_clusters=3):
     pedidos_df['Regiao'] = kmeans.fit_predict(coords)
     return pedidos_df
 
-# Exemplo de interface Streamlit para testar o TSP
-
+# Bloco de interface Streamlit para testes do TSP
 try:
     pedidos_df = pd.read_excel("database/Pedidos.xlsx", engine="openpyxl")
 except Exception as e:
@@ -103,9 +103,9 @@ except Exception as e:
 
 if st.button("Roteirizar"):
     st.write("Roteirização em execução...")
-    # Agrupar por 3 regiões
+    # Agrupa os pedidos em 3 regiões
     pedidos_df = agrupar_por_regiao(pedidos_df, n_clusters=3)
-    # Selecionar pedidos da primeira região
+    # Seleciona os pedidos da região 0 para rodar o TSP
     pedidos_regiao = pedidos_df[pedidos_df['Regiao'] == 0].reset_index(drop=True)
     if not pedidos_regiao.empty:
         rota = tsp_nearest_neighbor(pedidos_regiao)

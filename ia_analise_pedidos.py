@@ -9,8 +9,11 @@ import folium
 from config import endereco_partida, endereco_partida_coords
 
 def obter_coordenadas_opencage(endereco):
+    """
+    Obtém as coordenadas de um endereço utilizando a API do OpenCage.
+    """
     try:
-        api_key = "6f522c67add14152926990afbe127384"  # Sua chave de API do OpenCage
+        api_key = "6f522c67add14152926990afbe127384"  # Substitua pela sua chave de API
         url = f"https://api.opencagedata.com/geocode/v1/json?q={endereco}&key={api_key}"
         response = requests.get(url)
         data = response.json()
@@ -25,12 +28,16 @@ def obter_coordenadas_opencage(endereco):
         return None
 
 def obter_coordenadas_com_fallback(endereco, coordenadas_salvas):
+    """
+    Retorna as coordenadas salvas para um endereço ou tenta obtê-las via OpenCage.
+    Se não obtiver, utiliza um dicionário de coordenadas manuais pré-definido.
+    """
     if endereco in coordenadas_salvas:
         return coordenadas_salvas[endereco]
     
     coords = obter_coordenadas_opencage(endereco)
     if coords is None:
-        # Coordenadas manuais para endereços específicos
+        # Exemplo de coordenadas manuais para endereços específicos
         coordenadas_manuais = {
             "Rua Araújo Leite, 146, Centro, Piedade, São Paulo, Brasil": (-23.71241093449893, -47.41796911054548)
         }
@@ -38,17 +45,24 @@ def obter_coordenadas_com_fallback(endereco, coordenadas_salvas):
     
     if coords:
         coordenadas_salvas[endereco] = coords
-    
     return coords
 
 def calcular_distancia(coords_1, coords_2):
+    """
+    Calcula a distância em metros entre duas coordenadas.
+    """
     if coords_1 and coords_2:
         return geodesic(coords_1, coords_2).meters
     return None
 
 def criar_grafo_tsp(pedidos_df):
+    """
+    Cria um grafo (usando NetworkX) para o problema do caixeiro viajante (TSP).
+    O nó de partida é definido em config e os demais nós são os endereços únicos da planilha.
+    """
     G = nx.Graph()
     enderecos = pedidos_df['Endereço Completo'].unique()
+    # Nó de partida
     G.add_node(endereco_partida, pos=endereco_partida_coords)
     for endereco in enderecos:
         coords = (
@@ -63,6 +77,10 @@ def criar_grafo_tsp(pedidos_df):
     return G
 
 def resolver_tsp_genetico(G):
+    """
+    Resolve o TSP utilizando um algoritmo genético simples.
+    Retorna a melhor rota encontrada e sua distância total.
+    """
     def fitness(route):
         return sum(G.edges[route[i], route[i+1]]['weight'] for i in range(len(route) - 1)) + \
                G.edges[route[-1], route[0]]['weight']
@@ -104,19 +122,30 @@ def resolver_tsp_genetico(G):
     return best_route, best_distance
 
 def resolver_vrp(pedidos_df, caminhoes_df):
-    # Implementação do VRP usando OR-Tools (a implementar)
-    pass
+    """
+    Placeholder para a resolução do VRP.
+    Implementação usando OR-Tools ou outra biblioteca pode ser adicionada futuramente.
+    """
+    st.info("Resolver VRP ainda não implementado.")
+    return None
 
 def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, max_pedidos, n_clusters):
+    """
+    Otimiza a alocação dos pedidos aos caminhões disponíveis, agrupando os pedidos em regiões,
+    atribuindo números de carga e placas.
+    """
+    # Inicializa as colunas
     pedidos_df['Nº Carga'] = 0
     pedidos_df['Placa'] = ""
     carga_numero = 1
     
-    # Ajusta a capacidade da frota
+    # Ajusta a capacidade dos caminhões conforme o percentual informado
     caminhoes_df['Capac. Kg'] *= (percentual_frota / 100)
     caminhoes_df['Capac. Cx'] *= (percentual_frota / 100)
+    # Filtra somente caminhões com disponibilidade "Ativo"
     caminhoes_df = caminhoes_df[caminhoes_df['Disponível'] == 'Ativo']
     
+    # Agrupa os pedidos em regiões
     pedidos_df = agrupar_por_regiao(pedidos_df, n_clusters)
     
     for regiao in pedidos_df['Regiao'].unique():
@@ -125,7 +154,7 @@ def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, ma
             capacidade_peso = caminhao['Capac. Kg']
             capacidade_caixas = caminhao['Capac. Cx']
             pedidos_alocados = pedidos_regiao[
-                (pedidos_regiao['Peso dos Itens'] <= capacidade_peso) & 
+                (pedidos_regiao['Peso dos Itens'] <= capacidade_peso) &
                 (pedidos_regiao['Qtde. dos Itens'] <= capacidade_caixas)
             ]
             pedidos_alocados = pedidos_alocados.sample(n=min(max_pedidos, len(pedidos_alocados)))
@@ -142,11 +171,22 @@ def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, ma
     return pedidos_df
 
 def agrupar_por_regiao(pedidos_df, n_clusters):
-    kmeans = KMeans(n_clusters=n_clusters)
-    pedidos_df['Regiao'] = kmeans.fit_predict(pedidos_df[['Latitude', 'Longitude']])
+    """
+    Agrupa os pedidos em regiões usando K-Means com base nas colunas de Latitude e Longitude.
+    Adiciona/atualiza a coluna "Regiao" no DataFrame.
+    """
+    if pedidos_df.empty:
+        pedidos_df['Regiao'] = []
+        return pedidos_df
+    coords = pedidos_df[['Latitude', 'Longitude']].values
+    kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+    pedidos_df['Regiao'] = kmeans.fit_predict(coords)
     return pedidos_df
 
 def criar_mapa(pedidos_df):
+    """
+    Cria e retorna um mapa Folium com marcadores para cada pedido e para o endereço de partida.
+    """
     mapa = folium.Map(location=endereco_partida_coords, zoom_start=12)
     for _, row in pedidos_df.iterrows():
         popup_text = f"<b>Placa: {row['Placa']}</b><br>Endereço: {row['Endereço Completo']}"

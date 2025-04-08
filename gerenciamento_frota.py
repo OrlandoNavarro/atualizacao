@@ -12,6 +12,7 @@ def cadastrar_caminhoes():
             'Placa', 'Transportador', 'Descrição Veículo', 'Capac. Cx', 'Capac. Kg', 'Disponível'
         ])
     
+    # Upload de nova planilha de caminhões
     uploaded_caminhoes = st.file_uploader("Escolha o arquivo Excel de Caminhões", type=["xlsx", "xlsm"])
     
     if uploaded_caminhoes is not None:
@@ -21,6 +22,7 @@ def cadastrar_caminhoes():
             st.error("As colunas necessárias não foram encontradas na planilha de caminhões.")
             return
         
+        # Exclui placas indesejadas
         placas_excluir = ["FLB1111", "FLB2222", "FLB3333", "FLB4444",
                            "FLB5555", "FLB6666", "FLB7777", "FLB8888", "FLB9999"]
         novo_caminhoes_df = novo_caminhoes_df[~novo_caminhoes_df['Placa'].isin(placas_excluir)]

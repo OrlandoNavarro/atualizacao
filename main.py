@@ -42,6 +42,7 @@ def main():
             st.info("Aguardando envio da planilha de pedidos.")
         else:
             pedidos_df, coordenadas_salvas = pedidos_result
+            
             with st.spinner("Obtendo coordenadas..."):
                 pedidos_df['Latitude'] = pedidos_df['Endereço Completo'].apply(
                     lambda x: ia.obter_coordenadas_com_fallback(x, coordenadas_salvas)[0]
@@ -81,8 +82,8 @@ def main():
                 except FileNotFoundError:
                     st.error("Nenhum caminhão cadastrado. Cadastre a frota na opção 'Cadastro da Frota'.")
                     return
-                    
-                # Aplica algoritmos de roteirização
+                
+                # Aplica algoritmos de roteirização e otimização de aproveitamento da frota
                 pedidos_df = ia.agrupar_por_regiao(pedidos_df, n_clusters)
                 pedidos_df = ia.otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, max_pedidos, n_clusters)
                 
@@ -148,6 +149,7 @@ def main():
             
             salvar_coordenadas(coordenadas_salvas)
             st.dataframe(pedidos_df)
+            
             if st.button("Salvar alterações na planilha"):
                 pedidos_df.to_excel("database/Pedidos.xlsx", index=False)
                 st.success("Planilha editada e salva com sucesso!")

@@ -50,9 +50,9 @@ def converter_enderecos(df, endereco_coluna="Endereço Completo", cache_path="co
     Converte os endereços do dataframe e atualiza as colunas 'Latitude' e 'Longitude'.
     Utiliza um arquivo de cache para não repetir geocodificação.
     """
-    # Tenta ler cache
-    if os.path.exists(os.path.join(DATABASE_FOLDER, cache_path)):
-        cache_df = pd.read_excel(os.path.join(DATABASE_FOLDER, cache_path), engine="openpyxl")
+    cache_file = os.path.join(DATABASE_FOLDER, cache_path)
+    if os.path.exists(cache_file):
+        cache_df = pd.read_excel(cache_file, engine="openpyxl")
         cache = dict(zip(cache_df['Endereço'], zip(cache_df['Latitude'], cache_df['Longitude'])))
     else:
         cache = {}
@@ -78,7 +78,7 @@ def converter_enderecos(df, endereco_coluna="Endereço Completo", cache_path="co
     cache_df = pd.DataFrame(list(cache.items()), columns=['Endereço', 'Coordenadas'])
     cache_df[['Latitude','Longitude']] = pd.DataFrame(cache_df['Coordenadas'].tolist(), index=cache_df.index)
     cache_df.drop(columns=['Coordenadas'], inplace=True)
-    cache_df.to_excel(os.path.join(DATABASE_FOLDER, cache_path), index=False)
+    cache_df.to_excel(cache_file, index=False)
     return df
 
 # ---------- Pré-processamento de Dados ----------
@@ -90,9 +90,7 @@ def preprocessar_dados(df):
     - Normalização de volume, peso e distância (exemplo);
     - Tratamento de dados faltantes.
     """
-    # Exemplo: preenche dados faltantes com zero
     df.fillna(0, inplace=True)
-    # Normalização e conversão podem ser ajustadas conforme o caso
     for coluna in ['Peso dos Itens', 'Volume', 'Distância']:
         if coluna in df.columns:
             df[coluna] = pd.to_numeric(df[coluna], errors="coerce")
@@ -102,17 +100,15 @@ def preprocessar_dados(df):
 
 # ---------- Algoritmo Genético para Montagem de Cargas ----------
 
-def populaçao_inicial(pedidos_df, caminhoes_df, tamanho=50):
+def populacao_inicial(pedidos_df, caminhoes_df, tamanho=50):
     """
     Inicializa uma população aleatória de soluções viáveis.
-    Cada indivíduo pode ser representado, por exemplo, por um dicionário
-    mapeando IDs de pedidos para IDs de caminhões.
+    Cada indivíduo é representado por um dicionário mapeando IDs de pedidos para IDs de caminhões.
     """
     population = []
     pedidos_ids = pedidos_df.index.tolist()
     caminhoes_ids = caminhoes_df.index.tolist()
     for _ in range(tamanho):
-        # Aloca cada pedido para um caminhão aleatório
         sol = {pedido: random.choice(caminhoes_ids) for pedido in pedidos_ids}
         population.append(sol)
     return population
@@ -120,46 +116,32 @@ def populaçao_inicial(pedidos_df, caminhoes_df, tamanho=50):
 def avaliacao_fitness(solucao, pedidos_df, caminhoes_df):
     """
     Avalia uma solução com base em critérios:
-    - Economia, ocupação dos caminhões e distância
-    (Essa função deve ser ajustada com base nos requisitos reais)
+    - Economia, ocupação dos caminhões e distância.
+    (Ajuste esta função conforme os requisitos reais.)
     """
-    # Exemplo simples: fitness inverso da soma de "peso" alocado em cada caminhão
     fitness = 0
     for pedido, caminhao in solucao.items():
-        fitness += pedidos_df.loc[pedido, "Peso dos Itens"]  # ou volume, etc.
-    # Quanto menor a soma, melhor a solução (economia)
+        fitness += pedidos_df.loc[pedido, "Peso dos Itens"]
     return 1.0 / (fitness + 1e-6)
 
 def selecionar(population, fitnesses, num=10):
-    """
-    Seleciona os melhores indivíduos.
-    """
     sorted_population = [sol for _, sol in sorted(zip(fitnesses, population), key=lambda x: x[0], reverse=True)]
     return sorted_population[:num]
 
 def cruzar(sol1, sol2):
-    """
-    Realiza cruzamento entre duas soluções.
-    """
     filho = {}
     for key in sol1.keys():
         filho[key] = sol1[key] if random.random() < 0.5 else sol2[key]
     return filho
 
 def mutacao(solucao, caminhoes_ids, taxa=0.1):
-    """
-    Aplica mutação à solução.
-    """
     for pedido in solucao.keys():
         if random.random() < taxa:
             solucao[pedido] = random.choice(caminhoes_ids)
     return solucao
 
 def run_genetic_algorithm(pedidos_df, caminhoes_df, geracoes=100, tamanho_pop=50):
-    """
-    Executa o algoritmo genético completo para montagem de cargas.
-    """
-    population = populaçao_inicial(pedidos_df, caminhoes_df, tamanho=tamanho_pop)
+    population = populacao_inicial(pedidos_df, caminhoes_df, tamanho=tamanho_pop)
     pedidos_ids = pedidos_df.index.tolist()
     caminhoes_ids = caminhoes_df.index.tolist()
     melhor_solucao = None
@@ -183,28 +165,16 @@ def run_genetic_algorithm(pedidos_df, caminhoes_df, geracoes=100, tamanho_pop=50
 # ---------- IA de Aprendizado Supervisionado (Placeholder) ----------
 
 def treinar_modelo_ia(ia_df):
-    """
-    Placeholder para treinar um modelo de aprendizado supervisionado ou reforçado
-    com dados históricos de montagem de cargas.
-    """
-    # Aqui você implementa, por exemplo, um algoritmo de regressão, classificação ou RL
     modelo = {"modelo": "dummy", "treinado_em": datetime.now().isoformat()}
     return modelo
 
 def ajustar_fitness_com_ia(solucao, modelo):
-    """
-    Ajusta a avaliação da solução (fitness) com base no modelo treinado.
-    """
-    # Exemplo: modifica levemente o fitness baseado em um critério de similaridade
     solucao["ajuste_ia"] = "simulação"
     return solucao
 
 # ---------- Função para Gerar Mapa Interativo com Folium ----------
 
 def gerar_mapa(pedidos_df):
-    """
-    Gera mapa interativo com os pontos (endereços convertidos) e rotas otimizadas.
-    """
     if pedidos_df.empty:
         return folium.Map(location=[0, 0], zoom_start=2)
     centro = [pedidos_df.iloc[0]['Latitude'], pedidos_df.iloc[0]['Longitude']]
@@ -238,7 +208,7 @@ def upload_files():
 @app.route('/resultado', methods=['GET'])
 def get_resultado():
     """
-    GET /resultado: Lê os arquivos de Pedidos e Caminhões, pré-processa os dados, 
+    GET /resultado: Lê os arquivos de Pedidos e Caminhões, pré-processa os dados,
     executa o algoritmo genético e retorna a solução gerada.
     """
     try:
@@ -247,15 +217,13 @@ def get_resultado():
     except Exception as e:
         return jsonify({"error": f"Erro na leitura dos arquivos: {str(e)}"}), 400
 
-    # Monta o endereço completo e converte para coordenadas
     pedidos_df["Endereço Completo"] = pedidos_df["Endereço de Entrega"] + ", " + pedidos_df["Bairro de Entrega"] + ", " + pedidos_df["Cidade de Entrega"]
     pedidos_df = converter_enderecos(pedidos_df)
     pedidos_df = preprocessar_dados(pedidos_df)
 
     solucao = run_genetic_algorithm(pedidos_df, caminhoes_df)
-    # Opcional: ajustar o fitness com base na IA treinada com IA.xlsx
     try:
-        ia_df = ler_planilha("IA.xlsx", ["Referencia"])  # ajustar as colunas conforme seu arquivo
+        ia_df = ler_planilha("IA.xlsx", ["Referencia"])
         modelo = treinar_modelo_ia(ia_df)
         solucao = ajustar_fitness_com_ia(solucao, modelo)
     except Exception as e:

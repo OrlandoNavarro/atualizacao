@@ -2,18 +2,31 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 
+REQUIRED_COLUMNS = ["Endereço de Entrega", "Bairro de Entrega", "Cidade de Entrega"]
+
 def processar_pedidos():
     uploaded_pedidos = st.file_uploader("Escolha o arquivo Excel de Pedidos", type=["xlsx", "xlsm"])
     if uploaded_pedidos is None:
         st.info("Envie a planilha de pedidos para continuação.")
         return None
 
-    # Lê os pedidos e forma o endereço completo
-    pedidos_df = pd.read_excel(uploaded_pedidos, engine='openpyxl')
+    try:
+        pedidos_df = pd.read_excel(uploaded_pedidos, engine='openpyxl')
+    except Exception as e:
+        st.error("Erro ao ler a planilha: " + str(e))
+        return None
+
+    # Verifica se as colunas necessárias estão presentes
+    missing_cols = [col for col in REQUIRED_COLUMNS if col not in pedidos_df.columns]
+    if missing_cols:
+        st.error(f"As seguintes colunas necessárias não foram encontradas: {', '.join(missing_cols)}")
+        return None
+
+    # Cria a coluna 'Endereço Completo'
     pedidos_df['Endereço Completo'] = (
-        pedidos_df['Endereço de Entrega'] + ', ' +
-        pedidos_df['Bairro de Entrega'] + ', ' +
-        pedidos_df['Cidade de Entrega']
+        pedidos_df['Endereço de Entrega'].astype(str) + ', ' +
+        pedidos_df['Bairro de Entrega'].astype(str) + ', ' +
+        pedidos_df['Cidade de Entrega'].astype(str)
     )
     
     # Carrega coordenadas salvas (se houver)
