@@ -254,15 +254,39 @@ def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, ma
 def agrupar_por_regiao(pedidos_df, n_clusters):
     """
     Agrupa os pedidos em regiões usando K-Means com base nas colunas de Latitude e Longitude.
-    Adiciona/atualiza a coluna "Regiao" no DataFrame.
+    Adiciona/atualiza a coluna "Região" no DataFrame.
+
+    Parâmetros:
+      pedidos_df (DataFrame): DataFrame contendo as colunas 'Latitude' e 'Longitude'.
+      n_clusters (int): Número de regiões para agrupar.
+
+    Retorna:
+      DataFrame: DataFrame com a coluna 'Região' atualizada.
     """
     if pedidos_df.empty:
-        pedidos_df['Regiao'] = []
+        st.error("O DataFrame de pedidos está vazio. Não é possível agrupar por região.")
+        pedidos_df['Região'] = []
         return pedidos_df
-    coords = pedidos_df[['Latitude', 'Longitude']].values
-    kmeans = KMeans(n_clusters=n_clusters, random_state=42)
-    pedidos_df['Regiao'] = kmeans.fit_predict(coords)
-    return pedidos_df
+
+    # Verifica se as colunas 'Latitude' e 'Longitude' existem
+    if 'Latitude' not in pedidos_df.columns or 'Longitude' not in pedidos_df.columns:
+        st.error("As colunas 'Latitude' e 'Longitude' são necessárias para o agrupamento.")
+        pedidos_df['Região'] = []
+        return pedidos_df
+
+    try:
+        # Obtém as coordenadas para o agrupamento
+        coordenadas = pedidos_df[['Latitude', 'Longitude']].values
+
+        # Aplica o algoritmo K-Means
+        kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+        pedidos_df['Região'] = kmeans.fit_predict(coordenadas)
+
+        return pedidos_df
+    except ValueError as e:
+        st.error(f"Erro ao agrupar por região: {e}")
+        pedidos_df['Região'] = []
+        return pedidos_df
 
 def criar_mapa(pedidos_df):
     """

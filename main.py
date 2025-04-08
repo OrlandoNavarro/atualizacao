@@ -172,8 +172,8 @@ def main():
                 pedidos_df = ia.agrupar_por_regiao(pedidos_df, n_clusters)
 
                 # Verifica se a coluna 'Região' foi criada pela função 'agrupar_por_regiao'
-                if 'Região' not in pedidos_df.columns:
-                    st.error("A coluna 'Região' não foi criada. Verifique a função 'ia.agrupar_por_regiao'.")
+                if 'Região' not in pedidos_df.columns or pedidos_df['Região'].isnull().all():
+                    st.error("A coluna 'Região' não foi criada ou está vazia. Verifique os dados e a função 'ia.agrupar_por_regiao'.")
                     st.stop()
 
                 # Define as placas associando cada caminhão a uma única região
