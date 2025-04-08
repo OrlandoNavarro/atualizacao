@@ -55,6 +55,15 @@ def main():
                 return
             st.dataframe(pedidos_df)
             
+            # Botão para acionar a roteirização dos pedidos
+            if st.button("Roteirizar"):
+                # Aqui você pode chamar sua função de roteirização (ex: algoritmo genético)
+                # Exemplo simplificado:
+                st.write("Roteirização em execução...")
+                # Resultado fictício para demonstração
+                rota_otimizada = "Exemplo de Rota Otimizada: Endereço1 -> Endereço2 -> Endereço3"
+                st.success(rota_otimizada)
+    
     elif menu_opcao == "Cadastro da Frota":
         st.header("Cadastro da Frota")
         if st.checkbox("Cadastrar Caminhões"):
