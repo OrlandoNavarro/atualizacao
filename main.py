@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from streamlit_folium import folium_static
+import requests
 
 from gerenciamento_frota import cadastrar_caminhoes
 from subir_pedidos import processar_pedidos, salvar_coordenadas
@@ -13,7 +14,6 @@ def main():
     st.markdown(
         """
         <style>
-        /* Remove bullets e adiciona espaço entre os itens */
         div[data-baseweb="radio"] ul {
             list-style: none;
             padding-left: 0;
@@ -26,11 +26,12 @@ def main():
         unsafe_allow_html=True
     )
     
-    # Menu lateral com três opções
+    # Menu lateral com quatro opções, incluindo API REST
     menu_opcao = st.sidebar.radio("Menu", options=[
         "Dashboard", 
         "Cadastro de Frota e Upload de Planilha", 
-        "IA para Análise de Pedidos"
+        "IA para Análise de Pedidos",
+        "API REST"
     ])
     
     if menu_opcao == "Dashboard":
@@ -162,6 +163,22 @@ def main():
                     file_name="ia_pedidos.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
+    
+    elif menu_opcao == "API REST":
+        st.header("Interação com API REST")
+        st.write("Teste os seguintes endpoints:")
+        st.markdown("""
+        - **POST /upload**: Realiza upload dos arquivos (Pedidos.xlsx, Caminhoes.xlsx, IA.xlsx).
+        - **GET /resultado**: Retorna a solução gerada pelo algoritmo genético.
+        - **GET /mapa**: Exibe o mapa interativo com as rotas otimizadas.
+        """)
+        # Exemplo: Faz uma requisição ao endpoint /resultado na API local
+        if st.button("Testar /resultado"):
+            try:
+                resposta = requests.get("http://localhost:5000/resultado")
+                st.json(resposta.json())
+            except Exception as e:
+                st.error(f"Erro na requisição: {e}")
 
 if __name__ == "__main__":
     main()
