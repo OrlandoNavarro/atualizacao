@@ -229,8 +229,8 @@ def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, ma
     # Agrupa os pedidos em regiões
     pedidos_df = agrupar_por_regiao(pedidos_df, n_clusters)
     
-    for regiao in pedidos_df['Regiao'].unique():
-        pedidos_regiao = pedidos_df[pedidos_df['Regiao'] == regiao]
+    for regiao in pedidos_df['Região'].unique():
+        pedidos_regiao = pedidos_df[pedidos_df['Região'] == regiao]
         for _, caminhao in caminhoes_df.iterrows():
             capacidade_peso = caminhao['Capac. Kg']
             capacidade_caixas = caminhao['Capac. Cx']
@@ -279,7 +279,7 @@ def agrupar_por_regiao(pedidos_df, n_clusters):
         coordenadas = pedidos_df[['Latitude', 'Longitude']].values
 
         # Aplica o algoritmo K-Means
-        kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+        kmeans = KMeans(n_clusters=min(n_clusters, len(pedidos_df)), random_state=42)
         pedidos_df['Região'] = kmeans.fit_predict(coordenadas)
 
         return pedidos_df
