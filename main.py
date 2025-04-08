@@ -91,7 +91,7 @@ def main():
             
             st.write("Cabeçalho da planilha:", list(pedidos_df.columns))
             st.markdown("### Configurações para Roteirização")
-            n_clusters = st.slider("Número de regiões para agrupar", min_value=1, max_value=10, value=3)
+            n_clusters = st.slider("Número de regiões para agrupar", min_value=1, max_value=10, value=1)
             percentual_frota = st.slider("Capacidade da frota a ser usada (%)", min_value=0, max_value=100, value=100)
             max_pedidos = st.slider("Número máximo de pedidos por veículo", min_value=1, max_value=30, value=12)
             
@@ -170,8 +170,26 @@ def main():
                 # Agrupa pedidos por região respeitando o número máximo de regiões configurado
                 pedidos_df = ia.agrupar_por_regiao(pedidos_df, n_clusters)
 
+                # Garante que cada caminhão seja alocado a apenas uma região
+                regioes_por_caminhao = pedidos_df.groupby('Placa')['Região'].nunique()
+                caminhoes_invalidos = regioes_por_caminhao[regioes_por_caminhao > 1]
+
+                if not caminhoes_invalidos.empty:
+                    st.error("Erro: Um caminhão foi alocado a mais de uma região. Verifique os dados.")
+                    for placa, num_regioes in caminhoes_invalidos.items():
+                        st.write(f"- Caminhão {placa}: {num_regioes} regiões associadas")
+                    st.stop()
+
                 # Otimiza o uso da frota com base nas restrições
                 pedidos_df = ia.otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, max_pedidos, n_clusters)
+
+                # Valida se os pedidos de cada caminhão estão dentro de uma distância aceitável
+                for placa in pedidos_df['Placa'].unique():
+                    pedidos_caminhao = pedidos_df[pedidos_df['Placa'] == placa]
+                    coordenadas = pedidos_caminhao[['Latitude', 'Longitude']].values
+                    if not ia.validar_distancias(coordenadas):
+                        st.error(f"Erro: O caminhão {placa} foi alocado a pedidos muito distantes.")
+                        st.stop()
 
                 # Aplica o algoritmo TSP, se selecionado
                 if aplicar_tsp:
