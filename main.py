@@ -101,9 +101,9 @@ def main():
                     st.write("Melhor rota TSP:")
                     st.write("\n".join(melhor_rota))
                     st.write(f"Menor distância TSP: {menor_distancia}")
-                    pedidos_df['Ordem de Entrega TSP'] = pedidos_df['Endereço Completo'].apply(
-                        lambda x: melhor_rota.index(x) + 1 if x in melhor_rota else 0
-                    )
+                    
+                    # Define a ordem de entrega com base na carga
+                    pedidos_df = ia.definir_ordem_por_carga(pedidos_df, melhor_rota)
                 
                 if aplicar_vrp:
                     rota_vrp = ia.resolver_vrp(pedidos_df, caminhoes_df)

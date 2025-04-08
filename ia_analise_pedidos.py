@@ -260,3 +260,39 @@ def criar_mapa(pedidos_df):
         icon=folium.Icon(color='red')
     ).add_to(mapa)
     return mapa
+
+def definir_ordem_por_carga(pedidos_df, melhor_rota):
+    """
+    Para cada carga, reordena os pedidos conforme a ordenação do melhor rota obtida pelo TSP
+    e atribui uma sequência numérica única para o dia.
+    
+    Exemplo:
+       Para a carga "1266847", se houver 5 pedidos, os números serão "1266847-1", "1266847-2", ..., "1266847-5".
+    
+    Parâmetros:
+      pedidos_df (DataFrame): DataFrame contendo as colunas 'Carga' e 'Endereço Completo'.
+      melhor_rota (list): Lista de endereços (strings) na ordem definida pelo algoritmo TSP.
+    
+    Retorna:
+      DataFrame: pedidos_df com a coluna 'Ordem de Entrega TSP' definida.
+    """
+    # Cria um mapeamento do endereço para a posição encontrada na melhor rota
+    rota_indices = {endereco: idx for idx, endereco in enumerate(melhor_rota)}
+    
+    # Inicializa a coluna de ordem
+    pedidos_df['Ordem de Entrega TSP'] = ""
+    
+    # Para cada carga, filtre os pedidos e ordene de acordo com a melhor rota
+    for carga in pedidos_df['Carga'].unique():
+        mask = pedidos_df['Carga'] == carga
+        df_carga = pedidos_df[mask].copy()
+        # Ordena por posição na melhor rota; endereços que não estiverem na melhor rota serão colocados por último
+        df_carga = df_carga.sort_values(
+            by='Endereço Completo', 
+            key=lambda col: col.map(lambda x: rota_indices.get(x, float('inf')))
+        )
+        # Atribui sequência para cada pedido da carga
+        for seq, idx in enumerate(df_carga.index, start=1):
+            pedidos_df.at[idx, 'Ordem de Entrega TSP'] = f"{carga}-{seq}"
+            
+    return pedidos_df
