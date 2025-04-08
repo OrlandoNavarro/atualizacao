@@ -103,6 +103,15 @@ def main():
             # Permite ao usuário decidir se deseja otimizar a alocação de pedidos em veículos, considerando restrições como capacidade.
             aplicar_vrp = st.checkbox("Aplicar VRP")
             
+            # Garante que as colunas 'Placa' e 'Carga' existam no DataFrame
+            if 'Placa' not in pedidos_df.columns:
+                st.warning("A coluna 'Placa' não foi encontrada. Ela será criada com valores vazios.")
+                pedidos_df['Placa'] = ""
+
+            if 'Carga' not in pedidos_df.columns:
+                st.warning("A coluna 'Carga' não foi encontrada. Ela será criada com valores padrão.")
+                pedidos_df['Carga'] = pedidos_df.index  # Define cada pedido como uma carga única por padrão
+
             # Se a coluna 'Placa' existir, aplica formatação para destacar as placas em rodízio
             if 'Placa' in pedidos_df.columns:
                 today = datetime.datetime.now().weekday()  # Monday=0, ..., Sunday=6
