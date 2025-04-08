@@ -171,6 +171,11 @@ def main():
                 # Agrupa pedidos por região respeitando o número máximo de regiões configurado
                 pedidos_df = ia.agrupar_por_regiao(pedidos_df, n_clusters)
 
+                # Verifica se a coluna 'Região' foi criada pela função 'agrupar_por_regiao'
+                if 'Região' not in pedidos_df.columns:
+                    st.error("A coluna 'Região' não foi criada. Verifique a função 'ia.agrupar_por_regiao'.")
+                    st.stop()
+
                 # Garante que cada caminhão seja alocado a apenas uma região
                 regioes_por_caminhao = pedidos_df.groupby('Placa')['Região'].nunique()
                 caminhoes_invalidos = regioes_por_caminhao[regioes_por_caminhao > 1]
