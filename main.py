@@ -69,7 +69,6 @@ def main():
             st.info("Aguardando envio da planilha de pedidos.")
         else:
             pedidos_df, coordenadas_salvas = pedidos_result
-
             with st.spinner("Obtendo coordenadas..."):
                 pedidos_df['Latitude'] = pedidos_df['Endereço Completo'].apply(
                     lambda x: ia.obter_coordenadas_com_fallback(x, coordenadas_salvas)[0]
@@ -78,11 +77,10 @@ def main():
                     lambda x: ia.obter_coordenadas_com_fallback(x, coordenadas_salvas)[1]
                 )
             salvar_coordenadas(coordenadas_salvas)
-
             if pedidos_df['Latitude'].isnull().any() or pedidos_df['Longitude'].isnull().any():
                 st.error("Alguns endereços não obtiveram coordenadas. Verifique os dados.")
                 return
-
+            
             # Carrega frota
             try:
                 caminhoes_df = pd.read_excel("database/caminhoes_frota.xlsx", engine="openpyxl")
@@ -133,7 +131,37 @@ def main():
     
     elif menu_opcao == "IA para Análise de Pedidos":
         st.header("IA para Análise de Pedidos")
-        st.info("Funcionalidade de análise via IA em desenvolvimento.")
+        st.write("Envie a planilha de pedidos para análise e salve os dados no diretório 'database':")
+        # Processo similar ao de cadastro/upload: upload, obtenção de coordenadas e salvamento no database
+        pedidos_result = processar_pedidos()
+        if pedidos_result is None:
+            st.info("Aguardando envio da planilha de pedidos.")
+        else:
+            pedidos_df, coordenadas_salvas = pedidos_result
+            with st.spinner("Obtendo coordenadas..."):
+                pedidos_df['Latitude'] = pedidos_df['Endereço Completo'].apply(
+                    lambda x: ia.obter_coordenadas_com_fallback(x, coordenadas_salvas)[0]
+                )
+                pedidos_df['Longitude'] = pedidos_df['Endereço Completo'].apply(
+                    lambda x: ia.obter_coordenadas_com_fallback(x, coordenadas_salvas)[1]
+                )
+            salvar_coordenadas(coordenadas_salvas)
+            if pedidos_df['Latitude'].isnull().any() or pedidos_df['Longitude'].isnull().any():
+                st.error("Alguns endereços não obtiveram coordenadas. Verifique os dados.")
+                return
+            
+            st.dataframe(pedidos_df)
+            # Salva a planilha de análise da IA no diretório database com um nome específico
+            output_file_path = "database/ia_pedidos.xlsx"
+            pedidos_df.to_excel(output_file_path, index=False)
+            st.write(f"Planilha de IA salva: {output_file_path}")
+            with open(output_file_path, "rb") as file:
+                st.download_button(
+                    "Baixar planilha de IA",
+                    data=file, 
+                    file_name="ia_pedidos.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
 
 if __name__ == "__main__":
     main()
