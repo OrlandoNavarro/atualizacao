@@ -210,25 +210,39 @@ def resolver_vrp(pedidos_df, caminhoes_df):
     else:
         return "Não foi encontrada solução para o problema VRP."
 
-def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, max_pedidos, n_clusters):
+from geopy.distance import geodesic
+
+def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, max_pedidos, n_clusters, distancia_maxima_km=50):
     """
     Otimiza a alocação dos pedidos aos caminhões disponíveis, agrupando os pedidos em regiões,
-    atribuindo números de carga e placas.
+    atribuindo números de carga e placas, e validando distâncias.
+
+    Parâmetros:
+      pedidos_df (DataFrame): DataFrame contendo os pedidos.
+      caminhoes_df (DataFrame): DataFrame contendo os caminhões.
+      percentual_frota (float): Percentual da frota a ser usada.
+      max_pedidos (int): Número máximo de pedidos por caminhão.
+      n_clusters (int): Número de regiões para agrupar.
+      distancia_maxima_km (float): Distância máxima permitida entre pedidos de um mesmo caminhão.
+
+    Retorna:
+      DataFrame: DataFrame atualizado com as colunas 'Placa' e 'Carga'.
     """
     # Inicializa as colunas
     pedidos_df['Carga'] = 0
     pedidos_df['Placa'] = ""
     carga_numero = 1
-    
+
     # Ajusta a capacidade dos caminhões conforme o percentual informado
     caminhoes_df['Capac. Kg'] *= (percentual_frota / 100)
     caminhoes_df['Capac. Cx'] *= (percentual_frota / 100)
+
     # Filtra somente caminhões com disponibilidade "Ativo"
     caminhoes_df = caminhoes_df[caminhoes_df['Disponível'] == 'Ativo']
-    
+
     # Agrupa os pedidos em regiões
     pedidos_df = agrupar_por_regiao(pedidos_df, n_clusters)
-    
+
     for regiao in pedidos_df['Região'].unique():
         pedidos_regiao = pedidos_df[pedidos_df['Região'] == regiao]
         for _, caminhao in caminhoes_df.iterrows():
@@ -238,6 +252,12 @@ def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, ma
                 (pedidos_regiao['Peso dos Itens'] <= capacidade_peso) &
                 (pedidos_regiao['Qtde. dos Itens'] <= capacidade_caixas)
             ]
+
+            # Valida as distâncias antes de alocar os pedidos
+            coordenadas = pedidos_alocados[['Latitude', 'Longitude']].values
+            if not validar_distancias(coordenadas, distancia_maxima_km):
+                continue  # Pula este caminhão se os pedidos estão muito distantes
+
             pedidos_alocados = pedidos_alocados.sample(n=min(max_pedidos, len(pedidos_alocados)))
             if not pedidos_alocados.empty:
                 pedidos_df.loc[pedidos_alocados.index, 'Carga'] = carga_numero
@@ -245,10 +265,10 @@ def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, ma
                 capacidade_peso -= pedidos_alocados['Peso dos Itens'].sum()
                 capacidade_caixas -= pedidos_alocados['Qtde. dos Itens'].sum()
                 carga_numero += 1
-    
+
     if pedidos_df['Placa'].isnull().any() or pedidos_df['Carga'].isnull().any():
         st.error("Não foi possível atribuir placas ou números de carga a alguns pedidos.")
-    
+
     return pedidos_df
 
 def agrupar_por_regiao(pedidos_df, n_clusters):

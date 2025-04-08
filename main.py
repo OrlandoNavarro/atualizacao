@@ -202,13 +202,7 @@ def main():
                 # Otimiza o uso da frota com base nas restrições
                 pedidos_df = ia.otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, max_pedidos, n_clusters)
 
-                # Valida se os pedidos de cada caminhão estão dentro de uma distância aceitável
-                for placa in pedidos_df['Placa'].unique():
-                    pedidos_caminhao = pedidos_df[pedidos_df['Placa'] == placa]
-                    coordenadas = pedidos_caminhao[['Latitude', 'Longitude']].values
-                    if not ia.validar_distancias(coordenadas):
-                        st.error(f"Erro: O caminhão {placa} foi alocado a pedidos muito distantes.")
-                        st.stop()
+                # A validação de distâncias já foi feita durante a otimização
 
                 # Aplica o algoritmo TSP, se selecionado
                 if aplicar_tsp:
