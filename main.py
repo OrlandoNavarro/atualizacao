@@ -57,18 +57,20 @@ def main():
             salvar_coordenadas(coordenadas_salvas)
             st.dataframe(pedidos_df)
             
+            # Exibe os controles para ajustes do TSP antes da rotina de roteirização
+            st.markdown("### Ajustes de Roteirização TSP")
+            tsp_param = st.slider("Parâmetro TSP", min_value=1, max_value=10, value=5)
+
             # Botão para acionar a roteirização dos pedidos (simulação)
             if st.button("Roteirizar"):
                 st.write("Roteirização em execução...")
-                progress_bar = st.progress(0)
+                progress_bar = st.empty()  # placeholder para a barra de progresso
                 progresso = 0
-
-                # Simulação de progresso (em porcentagem)
                 for i in range(100):
                     time.sleep(0.05)
                     progresso += 1
                     progress_bar.progress(progresso)
-                
+                # Aqui você pode integrar o algoritmo TSP real utilizando o parâmetro tsp_param
                 rota_otimizada = "Exemplo de Rota Otimizada: Endereço1 -> Endereço2 -> Endereço3"
                 st.success(rota_otimizada)
                 st.write(f"Processo de roteirização concluído: {progresso}%")
