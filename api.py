@@ -72,7 +72,7 @@ def upload_files():
 def get_resultado():
     """
     GET /resultado: Lê os arquivos de Pedidos e Caminhões, pré-processa e executa o algoritmo genético.
-    Retorna a solução encontrada.
+    Retorna a melhor solução encontrada.
     """
     try:
         pedidos_df = ler_planilha("Pedidos.xlsx", ["Endereço de Entrega", "Bairro de Entrega", "Cidade de Entrega", "Peso dos Itens"])
@@ -91,7 +91,7 @@ def get_resultado():
 @app.route('/mapa', methods=['GET'])
 def get_mapa():
     """
-    GET /mapa: Gera e retorna uma página HTML com o mapa interativo.
+    GET /mapa: Gera e retorna uma página HTML com o mapa interativo dos pedidos.
     """
     try:
         pedidos_df = ler_planilha("Pedidos.xlsx", ["Endereço de Entrega", "Bairro de Entrega", "Cidade de Entrega"])

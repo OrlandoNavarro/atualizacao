@@ -26,7 +26,7 @@ def main():
         unsafe_allow_html=True
     )
     
-    # Menu lateral com quatro opções
+    # Menu lateral
     menu_opcao = st.sidebar.radio("Menu", options=[
         "Dashboard", 
         "Cadastro da Frota", 
@@ -50,10 +50,8 @@ def main():
                 pedidos_df['Longitude'] = pedidos_df['Endereço Completo'].apply(
                     lambda x: ia.obter_coordenadas_com_fallback(x, coordenadas_salvas)[1]
                 )
-            # Preenche valores nulos com 0
             pedidos_df['Latitude'] = pedidos_df['Latitude'].fillna(0)
             pedidos_df['Longitude'] = pedidos_df['Longitude'].fillna(0)
-            
             salvar_coordenadas(coordenadas_salvas)
             st.dataframe(pedidos_df)
             
@@ -67,23 +65,18 @@ def main():
             if st.button("Roteirizar"):
                 st.write("Roteirização em execução...")
                 progress_bar = st.empty()
-                progresso = 0
-                for i in range(100):
+                for progresso in range(100):
                     time.sleep(0.05)
-                    progresso += 1
-                    progress_bar.progress(progresso)
+                    progress_bar.progress(progresso + 1)
                 
-                # Filtra somente pedidos com peso maior que 0
                 pedidos_df = pedidos_df[pedidos_df['Peso dos Itens'] > 0]
                 
-                # Carrega frota (necessária para otimização)
                 try:
                     caminhoes_df = pd.read_excel("database/caminhoes_frota.xlsx", engine="openpyxl")
                 except FileNotFoundError:
                     st.error("Nenhum caminhão cadastrado. Cadastre a frota na opção 'Cadastro da Frota'.")
                     return
                 
-                # Aplica algoritmos de roteirização e otimização de aproveitamento da frota
                 pedidos_df = ia.agrupar_por_regiao(pedidos_df, n_clusters)
                 pedidos_df = ia.otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, max_pedidos, n_clusters)
                 
@@ -103,17 +96,16 @@ def main():
                 
                 st.write("Dados dos Pedidos:")
                 st.dataframe(pedidos_df)
-                
                 mapa = ia.criar_mapa(pedidos_df)
                 folium_static(mapa)
-                
+                                        
                 output_file_path = "database/roterizacao_resultado.xlsx"
                 pedidos_df.to_excel(output_file_path, index=False)
                 st.write(f"Arquivo salvo: {output_file_path}")
                 with open(output_file_path, "rb") as file:
                     st.download_button(
                         "Baixar planilha",
-                        data=file, 
+                        data=file,
                         file_name="roterizacao_resultado.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                     )
@@ -126,6 +118,7 @@ def main():
     
     elif menu_opcao == "Cadastro da Frota":
         st.header("Cadastro da Frota")
+        from gerenciamento_frota import cadastrar_caminhoes
         if st.checkbox("Cadastrar Caminhões"):
             cadastrar_caminhoes()
     
@@ -145,18 +138,16 @@ def main():
                     lambda x: ia.obter_coordenadas_com_fallback(x, coordenadas_salvas)[1]
                 )
             pedidos_df['Latitude'] = pedidos_df['Latitude'].fillna(0)
-            pedidos_df['Longitude'] = pedidos_df['Longitude'].fillna(0)
-            
+            pedidos_df['Longitude'] = pedidos_df['Longitude'].fillna(0)       
             salvar_coordenadas(coordenadas_salvas)
             st.dataframe(pedidos_df)
-            
             if st.button("Salvar alterações na planilha"):
                 pedidos_df.to_excel("database/Pedidos.xlsx", index=False)
                 st.success("Planilha editada e salva com sucesso!")
             with open("database/Pedidos.xlsx", "rb") as file:
                 st.download_button(
                     "Baixar planilha de Pedidos",
-                    data=file, 
+                    data=file,
                     file_name="Pedidos.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )

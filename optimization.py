@@ -1,3 +1,9 @@
+"""
+Módulo de otimização
+
+Contém funções do algoritmo genético para otimização de cargas.
+"""
+
 import random
 import numpy as np
 import logging
@@ -7,8 +13,12 @@ logging.basicConfig(level=logging.INFO, filename="optimization.log", filemode="a
 
 def populacao_inicial(pedidos_df, caminhoes_df, tamanho=50):
     """
-    Inicializa uma população aleatória de soluções viáveis para o problema.
-    Cada solução é um mapeamento de IDs de pedidos para IDs de caminhões.
+    Cria uma população inicial aleatória de soluções.
+    
+    Cada solução é um dicionário mapeando IDs de pedidos a IDs de caminhões.
+    
+    Retorna:
+      list: População de soluções.
     """
     population = []
     pedidos_ids = pedidos_df.index.tolist()
@@ -20,8 +30,12 @@ def populacao_inicial(pedidos_df, caminhoes_df, tamanho=50):
 
 def avaliacao_fitness(solucao, pedidos_df, caminhoes_df):
     """
-    Calcula a fitness de uma solução.
-    Exemplo: soma dos 'Peso dos Itens'. Ajuste conforme os requisitos.
+    Calcula o fitness de uma solução.
+    
+    Exemplo: usa o inverso da soma dos 'Peso dos Itens'.
+    
+    Retorna:
+      float: Valor de fitness.
     """
     fitness = 0
     for pedido, caminhao in solucao.items():
@@ -30,7 +44,10 @@ def avaliacao_fitness(solucao, pedidos_df, caminhoes_df):
 
 def selecionar(population, fitnesses, num=10):
     """
-    Seleciona as melhores soluções com base nas fitnesses.
+    Seleciona as melhores soluções com base em sua fitness.
+    
+    Retorna:
+      list: Subconjunto da população.
     """
     sorted_population = [sol for _, sol in sorted(zip(fitnesses, population), key=lambda x: x[0], reverse=True)]
     return sorted_population[:num]
@@ -46,7 +63,7 @@ def cruzar(sol1, sol2):
 
 def mutacao(solucao, caminhoes_ids, taxa=0.1):
     """
-    Aplica mutação em uma solução: troca aleatoriamente alguns mapeamentos.
+    Aplica mutação à solução, alterando mapeamentos aleatórios.
     """
     for pedido in solucao.keys():
         if random.random() < taxa:
@@ -55,7 +72,10 @@ def mutacao(solucao, caminhoes_ids, taxa=0.1):
 
 def run_genetic_algorithm(pedidos_df, caminhoes_df, geracoes=100, tamanho_pop=50):
     """
-    Executa um algoritmo genético para gerar uma solução ótima.
+    Executa o algoritmo genético e retorna a melhor solução encontrada.
+    
+    Retorna:
+      dict: Contendo a solução e o fitness.
     """
     population = populacao_inicial(pedidos_df, caminhoes_df, tamanho=tamanho_pop)
     pedidos_ids = pedidos_df.index.tolist()
