@@ -95,14 +95,16 @@ def main():
                 pedidos_df = ia.otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, max_pedidos, n_clusters)
                 
                 if aplicar_tsp:
+                    # Executa o algoritmo TSP
                     G = ia.criar_grafo_tsp(pedidos_df)
                     melhor_rota, menor_distancia = ia.resolver_tsp_genetico(G)
                     st.write("Melhor rota TSP:")
                     st.write("\n".join(melhor_rota))
                     st.write(f"Menor distância TSP: {menor_distancia}")
-                    pedidos_df['Ordem de Entrega TSP'] = pedidos_df['Endereço Completo'].apply(
-                        lambda x: melhor_rota.index(x) + 1 if x in melhor_rota else 0
-                    )
+                    
+                    # Define a Ordem de Entrega TSP baseada no número da carga
+                    # (Cada carga deve ser única para a entrega do dia)
+                    pedidos_df['Ordem de Entrega TSP'] = pedidos_df['Carga']
                 
                 if aplicar_vrp:
                     rota_vrp = ia.resolver_vrp(pedidos_df, caminhoes_df)
