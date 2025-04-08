@@ -15,6 +15,7 @@ def main():
         """
         <style>
         div[data-baseweb="radio"] ul {
+        
             list-style: none;
             padding-left: 0;
         }

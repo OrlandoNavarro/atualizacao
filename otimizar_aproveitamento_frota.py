@@ -1,6 +1,6 @@
 import streamlit as st
 
-def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, max_pedidos, n_clusters):
+def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, max_pedidos, n_clusters=3):
     pedidos_df['Carga'] = 0      # Substituindo "Nº Carga" por "Carga"
     pedidos_df['Placa'] = ""
     carga_numero = 1
@@ -8,9 +8,10 @@ def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, ma
     # Ajustar a capacidade da frota
     caminhoes_df['Capac. Kg'] *= (percentual_frota / 100)
     caminhoes_df['Capac. Cx'] *= (percentual_frota / 100)
-    caminhoes_df = caminhoes_df[caminhoes_df['Disponível'] == 'Ativo']
+    # Filtra apenas os caminhões disponíveis ("Sim")
+    caminhoes_df = caminhoes_df[caminhoes_df['Disponível'] == 'Sim']
     
-    # Agrupar pedidos por região
+    # Agrupar pedidos por região usando o valor informado em n_clusters (default=3)
     from agrupar_por_regiao import agrupar_por_regiao
     pedidos_df = agrupar_por_regiao(pedidos_df, n_clusters)
     
