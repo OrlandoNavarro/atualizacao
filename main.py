@@ -97,11 +97,9 @@ def main():
             max_pedidos = st.slider("Número máximo de pedidos por veículo", min_value=1, max_value=30, value=12)
             
             # Checkbox para aplicar o algoritmo TSP (Traveling Salesman Problem)
-            # Permite ao usuário decidir se deseja calcular a rota mais curta para visitar todos os pontos e retornar ao ponto inicial.
             aplicar_tsp = st.checkbox("Aplicar TSP")
 
             # Checkbox para aplicar o algoritmo VRP (Vehicle Routing Problem)
-            # Permite ao usuário decidir se deseja otimizar a alocação de pedidos em veículos, considerando restrições como capacidade.
             aplicar_vrp = st.checkbox("Aplicar VRP")
             
             # Garante que as colunas 'Placa' e 'Carga' existam no DataFrame
