@@ -3,6 +3,7 @@ import pandas as pd
 from streamlit_folium import folium_static
 import requests
 import time
+import datetime
 
 from gerenciamento_frota import cadastrar_caminhoes
 from subir_pedidos import processar_pedidos, salvar_coordenadas
@@ -88,28 +89,36 @@ def main():
             pedidos_df['Longitude'] = pedidos_df['Longitude'].fillna(0)
             salvar_coordenadas(coordenadas_salvas)
             
-            st.dataframe(pedidos_df)
             st.write("Cabeçalho da planilha:", list(pedidos_df.columns))
-            
             st.markdown("### Configurações para Roteirização")
             n_clusters = st.slider("Número de regiões para agrupar", min_value=1, max_value=10, value=3)
             percentual_frota = st.slider("Capacidade da frota a ser usada (%)", min_value=0, max_value=100, value=100)
             max_pedidos = st.slider("Número máximo de pedidos por veículo", min_value=1, max_value=30, value=12)
             aplicar_tsp = st.checkbox("Aplicar TSP")
-            
-            # Bloco para explicar o TSP
-            st.markdown("""
-            **Aplicar TSP:**  
-            Utiliza um algoritmo genético para encontrar a rota que minimiza a distância total entre todos os pontos de entrega.
-            """)
-
             aplicar_vrp = st.checkbox("Aplicar VRP")
+            
+            # Se a coluna 'Placa' existir, aplica formatação para destacar as placas em rodízio
+            if 'Placa' in pedidos_df.columns:
+                today = datetime.datetime.now().weekday()  # Monday=0, ..., Sunday=6
+                rodizio_map = {
+                    0: {'1', '2'},
+                    1: {'3', '4'},
+                    2: {'5', '6'},
+                    3: {'7', '8'},
+                    4: {'9', '0'}
+                }
+                rodizio_numbers = rodizio_map.get(today, set())  # Se hoje for fim de semana, retorna conjunto vazio
 
-            # Bloco para explicar o VRP
-            st.markdown("""
-            **Aplicar VRP:**  
-            Distribui os pedidos entre os veículos disponíveis, respeitando as restrições de capacidade e minimizando a distância percorrida.
-            """)
+                def rodizio_style(val):
+                    if isinstance(val, str) and val.strip():
+                        last_digit = val.strip()[-1]
+                        if last_digit in rodizio_numbers:
+                            return 'color: red'
+                    return ''
+                
+                st.dataframe(pedidos_df.style.applymap(rodizio_style, subset=['Placa']))
+            else:
+                st.dataframe(pedidos_df)
             
             if st.button("Roteirizar"):
                 st.write("Roteirização em execução...")
