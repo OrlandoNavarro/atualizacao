@@ -176,6 +176,18 @@ def main():
                     st.error("A coluna 'Região' não foi criada. Verifique a função 'ia.agrupar_por_regiao'.")
                     st.stop()
 
+                # Define as placas associando cada caminhão a uma única região
+                regioes = pedidos_df['Região'].unique()
+                placas_disponiveis = caminhoes_df['Placa'].tolist()
+
+                if len(regioes) > len(placas_disponiveis):
+                    st.error("O número de regiões excede o número de caminhões disponíveis. Adicione mais caminhões.")
+                    st.stop()
+
+                # Associa cada região a uma placa
+                regiao_para_placa = {regiao: placas_disponiveis[i] for i, regiao in enumerate(regioes)}
+                pedidos_df['Placa'] = pedidos_df['Região'].map(regiao_para_placa)
+
                 # Garante que cada caminhão seja alocado a apenas uma região
                 regioes_por_caminhao = pedidos_df.groupby('Placa')['Região'].nunique()
                 caminhoes_invalidos = regioes_por_caminhao[regioes_por_caminhao > 1]
