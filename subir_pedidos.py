@@ -18,9 +18,11 @@ def processar_pedidos():
     
     # Carrega coordenadas salvas (se houver)
     try:
-        coordenadas_salvas_df = pd.read_excel("coordenadas_salvas.xlsx", engine='openpyxl')
-        coordenadas_salvas = dict(zip(coordenadas_salvas_df['Endereço'], 
-                                       zip(coordenadas_salvas_df['Latitude'], coordenadas_salvas_df['Longitude'])))
+        coordenadas_salvas_df = pd.read_excel("database/coordenadas_salvas.xlsx", engine='openpyxl')
+        coordenadas_salvas = dict(zip(
+            coordenadas_salvas_df['Endereço'],
+            zip(coordenadas_salvas_df['Latitude'], coordenadas_salvas_df['Longitude'])
+        ))
     except FileNotFoundError:
         coordenadas_salvas = {}
     
@@ -29,7 +31,9 @@ def processar_pedidos():
 def salvar_coordenadas(coordenadas_salvas):
     # Salva as coordenadas atualizadas num arquivo Excel
     coordenadas_salvas_df = pd.DataFrame(coordenadas_salvas.items(), columns=['Endereço', 'Coordenadas'])
-    coordenadas_salvas_df[['Latitude','Longitude']] = pd.DataFrame(coordenadas_salvas_df['Coordenadas'].tolist(),
-                                                                  index=coordenadas_salvas_df.index)
+    coordenadas_salvas_df[['Latitude','Longitude']] = pd.DataFrame(
+        coordenadas_salvas_df['Coordenadas'].tolist(),
+        index=coordenadas_salvas_df.index
+    )
     coordenadas_salvas_df.drop(columns=['Coordenadas'], inplace=True)
-    coordenadas_salvas_df.to_excel("coordenadas_salvas.xlsx", index=False)
+    coordenadas_salvas_df.to_excel("database/coordenadas_salvas.xlsx", index=False)

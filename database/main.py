@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from streamlit_folium import folium_static
+from db.database import Database
 
 from gerenciamento_frota import cadastrar_caminhoes
 from subir_pedidos import processar_pedidos, salvar_coordenadas
@@ -8,6 +9,10 @@ import ia_analise_pedidos as ia
 
 def main():
     st.title("Roteirizador de Pedidos")
+
+    # Inicializa o banco de dados
+    db = Database()
+    db.create_tables()
 
     # Subir e processar a planilha de pedidos
     pedidos_result = processar_pedidos()
@@ -17,12 +22,8 @@ def main():
 
     # Obter coordenadas para cada pedido
     with st.spinner("Obtendo coordenadas..."):
-        pedidos_df['Latitude'] = pedidos_df['Endereço Completo'].apply(
-            lambda x: ia.obter_coordenadas_com_fallback(x, coordenadas_salvas)[0]
-        )
-        pedidos_df['Longitude'] = pedidos_df['Endereço Completo'].apply(
-            lambda x: ia.obter_coordenadas_com_fallback(x, coordenadas_salvas)[1]
-        )
+        pedidos_df['Latitude'] = pedidos_df['Endereço Completo'].apply(lambda x: ia.obter_coordenadas_com_fallback(x, coordenadas_salvas)[0])
+        pedidos_df['Longitude'] = pedidos_df['Endereço Completo'].apply(lambda x: ia.obter_coordenadas_com_fallback(x, coordenadas_salvas)[1])
     salvar_coordenadas(coordenadas_salvas)
     
     if pedidos_df['Latitude'].isnull().any() or pedidos_df['Longitude'].isnull().any():
@@ -31,7 +32,7 @@ def main():
 
     # Carrega a frota cadastrada
     try:
-        caminhoes_df = pd.read_excel("database/caminhoes_frota.xlsx", engine="openpyxl")
+        caminhoes_df = pd.read_excel("caminhoes_frota.xlsx", engine="openpyxl")
     except FileNotFoundError:
         st.error("Nenhum caminhão cadastrado. Cadastre a frota na aba de gerenciamento.")
         return
@@ -66,16 +67,12 @@ def main():
         mapa = ia.criar_mapa(pedidos_df)
         folium_static(mapa)
         
-        output_file_path = "database/roterizacao_resultado.xlsx"
+        output_file_path = "roterizacao_resultado.xlsx"
         pedidos_df.to_excel(output_file_path, index=False)
         st.write(f"Arquivo salvo: {output_file_path}")
         with open(output_file_path, "rb") as file:
-            st.download_button(
-                "Baixar planilha",
-                data=file, 
-                file_name="roterizacao_resultado.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
+            st.download_button("Baixar planilha", data=file, file_name="roterizacao_resultado.xlsx",
+                               mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     
     # Abas para Gerenciamento da Frota e Upload de Roteirizações
     if st.checkbox("Cadastrar Caminhões"):
