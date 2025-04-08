@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from streamlit_folium import folium_static
 import requests
+import time
 
 from gerenciamento_frota import cadastrar_caminhoes
 from subir_pedidos import processar_pedidos, salvar_coordenadas
@@ -10,7 +11,6 @@ import ia_analise_pedidos as ia
 def main():
     st.title("Roteirizador de Pedidos")
     
-    # Injetar CSS para remover os marcadores do radio e adicionar espaçamento entre os itens
     st.markdown(
         """
         <style>
@@ -49,31 +49,44 @@ def main():
                 pedidos_df['Longitude'] = pedidos_df['Endereço Completo'].apply(
                     lambda x: ia.obter_coordenadas_com_fallback(x, coordenadas_salvas)[1]
                 )
+            # Se não encontrar as coordenadas, preenche os valores nulos com 0
+            pedidos_df['Latitude'] = pedidos_df['Latitude'].fillna(0)
+            pedidos_df['Longitude'] = pedidos_df['Longitude'].fillna(0)
+            
             salvar_coordenadas(coordenadas_salvas)
-            if pedidos_df['Latitude'].isnull().any() or pedidos_df['Longitude'].isnull().any():
-                st.error("Alguns endereços não obtiveram coordenadas. Verifique os dados.")
-                return
             st.dataframe(pedidos_df)
             
-            # Botão para acionar a roteirização dos pedidos
+            # Botão para acionar a roteirização dos pedidos (simulação)
             if st.button("Roteirizar"):
-                # Aqui você pode chamar sua função de roteirização (ex: algoritmo genético)
-                # Exemplo simplificado:
                 st.write("Roteirização em execução...")
-                # Resultado fictício para demonstração
+                progress_bar = st.progress(0)
+                progresso = 0
+
+                # Simulação de progresso (em porcentagem)
+                for i in range(100):
+                    time.sleep(0.05)
+                    progresso += 1
+                    progress_bar.progress(progresso)
+                
                 rota_otimizada = "Exemplo de Rota Otimizada: Endereço1 -> Endereço2 -> Endereço3"
                 st.success(rota_otimizada)
+                st.write(f"Processo de roteirização concluído: {progresso}%")
+                
+            # Permitir edição da planilha de pedidos (única planilha)
+            st.markdown("**Edite a planilha de Pedidos, se necessário:**")
+            dados_editados = st.data_editor(pedidos_df, num_rows="dynamic")
+            if st.button("Salvar alterações na planilha"):
+                dados_editados.to_excel("database/Pedidos.xlsx", index=False)
+                st.success("Planilha editada e salva com sucesso!")
     
     elif menu_opcao == "Cadastro da Frota":
         st.header("Cadastro da Frota")
         if st.checkbox("Cadastrar Caminhões"):
             cadastrar_caminhoes()
-        # Caso deseje manter o upload dos pedidos como parte deste menu, insira as chamadas necessárias,
-        # ou remova se não for mais necessário.
     
     elif menu_opcao == "IA Analise":
         st.header("IA Analise")
-        st.write("Envie a planilha de pedidos para análise e salve os dados no diretório 'database':")
+        st.write("Envie a planilha de pedidos para análise e edite os dados, se necessário:")
         pedidos_result = processar_pedidos()
         if pedidos_result is None:
             st.info("Aguardando envio da planilha de pedidos.")
@@ -86,19 +99,21 @@ def main():
                 pedidos_df['Longitude'] = pedidos_df['Endereço Completo'].apply(
                     lambda x: ia.obter_coordenadas_com_fallback(x, coordenadas_salvas)[1]
                 )
+            # Preenche valores nulos com 0
+            pedidos_df['Latitude'] = pedidos_df['Latitude'].fillna(0)
+            pedidos_df['Longitude'] = pedidos_df['Longitude'].fillna(0)
+            
             salvar_coordenadas(coordenadas_salvas)
-            if pedidos_df['Latitude'].isnull().any() or pedidos_df['Longitude'].isnull().any():
-                st.error("Alguns endereços não obtiveram coordenadas. Verifique os dados.")
-                return
             st.dataframe(pedidos_df)
-            output_file_path = "database/ia_pedidos.xlsx"
-            pedidos_df.to_excel(output_file_path, index=False)
-            st.write(f"Planilha de IA salva: {output_file_path}")
-            with open(output_file_path, "rb") as file:
+            # Nesta aba, utilizamos a mesma planilha "Pedidos.xlsx"
+            if st.button("Salvar alterações na planilha"):
+                pedidos_df.to_excel("database/Pedidos.xlsx", index=False)
+                st.success("Planilha editada e salva com sucesso!")
+            with open("database/Pedidos.xlsx", "rb") as file:
                 st.download_button(
-                    "Baixar planilha de IA",
+                    "Baixar planilha de Pedidos",
                     data=file, 
-                    file_name="ia_pedidos.xlsx",
+                    file_name="Pedidos.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
     
