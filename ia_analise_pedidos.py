@@ -306,3 +306,23 @@ def criar_mapa(pedidos_df):
         icon=folium.Icon(color='red')
     ).add_to(mapa)
     return mapa
+
+def validar_distancias(coordenadas, distancia_maxima_km=50):
+    """
+    Verifica se todas as coordenadas estão dentro de uma distância máxima aceitável.
+
+    Parâmetros:
+      coordenadas (list): Lista de tuplas contendo as coordenadas (latitude, longitude).
+      distancia_maxima_km (float): Distância máxima permitida entre dois pontos (em quilômetros).
+
+    Retorna:
+      bool: True se todas as distâncias forem menores ou iguais à distância máxima, False caso contrário.
+    """
+    if len(coordenadas) < 2:
+        return True  # Se houver menos de dois pontos, não há distâncias para validar.
+
+    for i, coord1 in enumerate(coordenadas):
+        for coord2 in coordenadas[i + 1:]:
+            if geodesic(coord1, coord2).kilometers > distancia_maxima_km:
+                return False
+    return True
