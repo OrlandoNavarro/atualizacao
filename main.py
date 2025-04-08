@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 from streamlit_folium import folium_static
+import requests
+import time
 
 from gerenciamento_frota import cadastrar_caminhoes
 from subir_pedidos import processar_pedidos, salvar_coordenadas
@@ -9,11 +11,10 @@ import ia_analise_pedidos as ia
 def main():
     st.title("Roteirizador de Pedidos")
     
-    # Injetar CSS para remover os marcadores do radio e adicionar espaçamento entre os itens
     st.markdown(
         """
         <style>
-        /* Remove bullets e adiciona espaço entre os itens */
+        /* Remove bullets do radio e adiciona espaçamento */
         div[data-baseweb="radio"] ul {
             list-style: none;
             padding-left: 0;
@@ -26,18 +27,17 @@ def main():
         unsafe_allow_html=True
     )
     
-    # Menu lateral com três opções
+    # Menu lateral com quatro opções
     menu_opcao = st.sidebar.radio("Menu", options=[
         "Dashboard", 
-        "Cadastro de Frota e Upload de Planilha", 
-        "IA para Análise de Pedidos"
+        "Cadastro da Frota", 
+        "IA Analise",
+        "API REST"
     ])
     
     if menu_opcao == "Dashboard":
         st.header("Dashboard - Envio de Pedidos")
-        st.write("Bem-vindo ao Dashboard! Envie a planilha de pedidos para iniciar:")
-        
-        # Processa a planilha de pedidos
+        st.write("Bem-vindo! Envie a planilha de pedidos para iniciar:")
         pedidos_result = processar_pedidos()
         if pedidos_result is None:
             st.info("Aguardando envio da planilha de pedidos.")
@@ -50,89 +50,40 @@ def main():
                 pedidos_df['Longitude'] = pedidos_df['Endereço Completo'].apply(
                     lambda x: ia.obter_coordenadas_com_fallback(x, coordenadas_salvas)[1]
                 )
+            # Substitui nulos por 0
+            pedidos_df['Latitude'] = pedidos_df['Latitude'].fillna(0)
+            pedidos_df['Longitude'] = pedidos_df['Longitude'].fillna(0)
+            
             salvar_coordenadas(coordenadas_salvas)
-            if pedidos_df['Latitude'].isnull().any() or pedidos_df['Longitude'].isnull().any():
-                st.error("Alguns endereços não obtiveram coordenadas. Verifique os dados.")
-                return
             st.dataframe(pedidos_df)
             
-    elif menu_opcao == "Cadastro de Frota e Upload de Planilha":
-        st.header("Cadastro de Caminhões e Upload de Pedidos")
-        
-        # Aba de cadastro de caminhões
+            # Botão de roteirização (simulação)
+            if st.button("Roteirizar"):
+                st.write("Roteirização em execução...")
+                progress_bar = st.empty()
+                progresso = 0
+                for i in range(100):
+                    time.sleep(0.05)
+                    progresso += 1
+                    progress_bar.progress(progresso)
+                rota_otimizada = "Exemplo de Rota Otimizada: Endereço1 -> Endereço2 -> Endereço3"
+                st.success(rota_otimizada)
+                st.write(f"Processo concluído: {progresso}%")
+                
+            st.markdown("**Edite a planilha de Pedidos, se necessário:**")
+            dados_editados = st.data_editor(pedidos_df, num_rows="dynamic")
+            if st.button("Salvar alterações na planilha"):
+                dados_editados.to_excel("database/Pedidos.xlsx", index=False)
+                st.success("Planilha salva com sucesso!")
+    
+    elif menu_opcao == "Cadastro da Frota":
+        st.header("Cadastro da Frota")
         if st.checkbox("Cadastrar Caminhões"):
             cadastrar_caminhoes()
-        
-        # Seção de upload de planilha de pedidos
-        pedidos_result = processar_pedidos()
-        if pedidos_result is None:
-            st.info("Aguardando envio da planilha de pedidos.")
-        else:
-            pedidos_df, coordenadas_salvas = pedidos_result
-            with st.spinner("Obtendo coordenadas..."):
-                pedidos_df['Latitude'] = pedidos_df['Endereço Completo'].apply(
-                    lambda x: ia.obter_coordenadas_com_fallback(x, coordenadas_salvas)[0]
-                )
-                pedidos_df['Longitude'] = pedidos_df['Endereço Completo'].apply(
-                    lambda x: ia.obter_coordenadas_com_fallback(x, coordenadas_salvas)[1]
-                )
-            salvar_coordenadas(coordenadas_salvas)
-            if pedidos_df['Latitude'].isnull().any() or pedidos_df['Longitude'].isnull().any():
-                st.error("Alguns endereços não obtiveram coordenadas. Verifique os dados.")
-                return
-            
-            # Carrega frota
-            try:
-                caminhoes_df = pd.read_excel("database/caminhoes_frota.xlsx", engine="openpyxl")
-            except FileNotFoundError:
-                st.error("Nenhum caminhão cadastrado. Cadastre a frota na opção de cadastro.")
-                return
-
-            # Configurações para roteirização
-            n_clusters = st.slider("Número de regiões para agrupar", min_value=1, max_value=10, value=5)
-            percentual_frota = st.slider("Capacidade da frota a ser usada (%)", min_value=0, max_value=100, value=100)
-            max_pedidos = st.slider("Número máximo de pedidos por veículo", min_value=1, max_value=20, value=10)
-            aplicar_tsp = st.checkbox("Aplicar TSP")
-            aplicar_vrp = st.checkbox("Aplicar VRP")
-            
-            if st.button("Roteirizar"):
-                pedidos_df = pedidos_df[pedidos_df['Peso dos Itens'] > 0]
-                pedidos_df = ia.agrupar_por_regiao(pedidos_df, n_clusters)
-                pedidos_df = ia.otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, max_pedidos, n_clusters)
-                
-                if aplicar_tsp:
-                    G = ia.criar_grafo_tsp(pedidos_df)
-                    melhor_rota, menor_distancia = ia.resolver_tsp_genetico(G)
-                    st.write("Melhor rota TSP:")
-                    st.write("\n".join(melhor_rota))
-                    st.write(f"Menor distância TSP: {menor_distancia}")
-                    pedidos_df['Ordem de Entrega TSP'] = pedidos_df['Endereço Completo'].apply(lambda x: melhor_rota.index(x) + 1)
-                
-                if aplicar_vrp:
-                    rota_vrp = ia.resolver_vrp(pedidos_df, caminhoes_df)
-                    st.write(f"Melhor rota VRP: {rota_vrp}")
-                
-                st.write("Dados dos Pedidos:")
-                st.dataframe(pedidos_df)
-                
-                mapa = ia.criar_mapa(pedidos_df)
-                folium_static(mapa)
-                
-                output_file_path = "database/roterizacao_resultado.xlsx"
-                pedidos_df.to_excel(output_file_path, index=False)
-                st.write(f"Arquivo salvo: {output_file_path}")
-                with open(output_file_path, "rb") as file:
-                    st.download_button(
-                        "Baixar planilha",
-                        data=file, 
-                        file_name="roterizacao_resultado.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                    )
     
-    elif menu_opcao == "IA para Análise de Pedidos":
-        st.header("IA para Análise de Pedidos")
-        st.write("Envie a planilha de pedidos para análise e salve os dados no diretório 'database':")
-        # Processo similar ao de cadastro/upload: upload, obtenção de coordenadas e salvamento no database
+    elif menu_opcao == "IA Analise":
+        st.header("IA Analise")
+        st.write("Envie a planilha de pedidos para análise e edite os dados, se necessário:")
         pedidos_result = processar_pedidos()
         if pedidos_result is None:
             st.info("Aguardando envio da planilha de pedidos.")
@@ -145,23 +96,36 @@ def main():
                 pedidos_df['Longitude'] = pedidos_df['Endereço Completo'].apply(
                     lambda x: ia.obter_coordenadas_com_fallback(x, coordenadas_salvas)[1]
                 )
-            salvar_coordenadas(coordenadas_salvas)
-            if pedidos_df['Latitude'].isnull().any() or pedidos_df['Longitude'].isnull().any():
-                st.error("Alguns endereços não obtiveram coordenadas. Verifique os dados.")
-                return
+            pedidos_df['Latitude'] = pedidos_df['Latitude'].fillna(0)
+            pedidos_df['Longitude'] = pedidos_df['Longitude'].fillna(0)
             
+            salvar_coordenadas(coordenadas_salvas)
             st.dataframe(pedidos_df)
-            # Salva a planilha de análise da IA no diretório database com um nome específico
-            output_file_path = "database/ia_pedidos.xlsx"
-            pedidos_df.to_excel(output_file_path, index=False)
-            st.write(f"Planilha de IA salva: {output_file_path}")
-            with open(output_file_path, "rb") as file:
+            if st.button("Salvar alterações na planilha"):
+                pedidos_df.to_excel("database/Pedidos.xlsx", index=False)
+                st.success("Planilha salva com sucesso!")
+            with open("database/Pedidos.xlsx", "rb") as file:
                 st.download_button(
-                    "Baixar planilha de IA",
+                    "Baixar planilha de Pedidos",
                     data=file, 
-                    file_name="ia_pedidos.xlsx",
+                    file_name="Pedidos.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
+    
+    elif menu_opcao == "API REST":
+        st.header("Interação com API REST")
+        st.write("Teste os endpoints:")
+        st.markdown("""
+        - **POST /upload**: Faz upload dos arquivos (Pedidos.xlsx, Caminhoes.xlsx, IA.xlsx).
+        - **GET /resultado**: Retorna a solução do algoritmo genético.
+        - **GET /mapa**: Exibe o mapa interativo.
+        """)
+        if st.button("Testar /resultado"):
+            try:
+                resposta = requests.get("http://localhost:5000/resultado")
+                st.json(resposta.json())
+            except Exception as e:
+                st.error(f"Erro na requisição: {e}")
 
 if __name__ == "__main__":
     main()

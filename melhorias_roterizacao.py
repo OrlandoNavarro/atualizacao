@@ -6,7 +6,7 @@ import streamlit as st
 
 def calcular_distancia(coord1, coord2):
     """
-    Calcula a distância em quilômetros entre duas coordenadas.
+    Calcula a distância em km entre duas coordenadas.
     """
     try:
         return geodesic(coord1, coord2).km
@@ -16,7 +16,7 @@ def calcular_distancia(coord1, coord2):
 
 def gerar_matriz_distancias(pedidos_df):
     """
-    Gera uma matriz de distâncias entre os pedidos com base em suas coordenadas.
+    Gera uma matriz de distâncias com base nas coordenadas dos pedidos.
     """
     coords = list(zip(pedidos_df['Latitude'], pedidos_df['Longitude']))
     n = len(coords)
@@ -31,7 +31,7 @@ def gerar_matriz_distancias(pedidos_df):
 
 def tsp_nearest_neighbor(pedidos_df):
     """
-    Utiliza a heurística do vizinho mais próximo para resolver o TSP e retorna a ordem dos índices.
+    Heurística do vizinho mais próximo para TSP; retorna ordem dos índices.
     """
     matriz = gerar_matriz_distancias(pedidos_df)
     n = len(matriz)
@@ -54,7 +54,7 @@ def tsp_nearest_neighbor(pedidos_df):
 
 def route_distance(rota, matriz):
     """
-    Calcula a distância total da rota usando a matriz de distâncias.
+    Calcula a distância total dada uma rota e a matriz de distâncias.
     """
     dist = 0
     for i in range(len(rota) - 1):
@@ -63,8 +63,7 @@ def route_distance(rota, matriz):
 
 def otimizacao_2opt(rota, matriz):
     """
-    Melhora uma rota TSP utilizando a heurística 2-opt,
-    invertendo segmentos para reduzir a distância total.
+    Melhora uma rota TSP usando a heurística 2-opt.
     """
     best = rota
     improved = True
@@ -84,34 +83,30 @@ def otimizacao_2opt(rota, matriz):
 
 def agrupar_por_regiao(pedidos_df, n_clusters=3):
     """
-    Agrupa os pedidos em regiões usando K-Means com base em Latitude e Longitude.
-    Adiciona a coluna 'Regiao' ao dataframe.
+    Agrupa os pedidos em regiões usando K-Means e adiciona a coluna 'Regiao'.
     """
     if pedidos_df.empty:
+        pedidos_df['Regiao'] = []
         return pedidos_df
     coords = pedidos_df[['Latitude', 'Longitude']].values
     kmeans = KMeans(n_clusters=n_clusters, random_state=42)
     pedidos_df['Regiao'] = kmeans.fit_predict(coords)
     return pedidos_df
 
-# INTERFACE STREAMLIT
+# Exemplo de interface Streamlit para testar o TSP
 
-# Tenta ler a planilha de pedidos (supondo que ela esteja em "database/Pedidos.xlsx")
 try:
     pedidos_df = pd.read_excel("database/Pedidos.xlsx", engine="openpyxl")
 except Exception as e:
     st.error("Planilha de Pedidos não encontrada. Envie a planilha de pedidos.")
-    pedidos_df = pd.DataFrame()  # ou interrompa a execução
+    pedidos_df = pd.DataFrame()
 
 if st.button("Roteirizar"):
     st.write("Roteirização em execução...")
-    
-    # Agrupa os pedidos em regiões
+    # Agrupar por 3 regiões
     pedidos_df = agrupar_por_regiao(pedidos_df, n_clusters=3)
-    
-    # Seleciona os pedidos da primeira região para otimização
+    # Selecionar pedidos da primeira região
     pedidos_regiao = pedidos_df[pedidos_df['Regiao'] == 0].reset_index(drop=True)
-    
     if not pedidos_regiao.empty:
         rota = tsp_nearest_neighbor(pedidos_regiao)
         matriz = gerar_matriz_distancias(pedidos_regiao)
