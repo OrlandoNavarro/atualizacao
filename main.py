@@ -126,20 +126,6 @@ def main():
             else:
                 st.dataframe(pedidos_df)
             
-            # Verifica se as colunas 'Placa' e 'Carga' existem no DataFrame
-            if 'Placa' in pedidos_df.columns and 'Carga' in pedidos_df.columns:
-                # Verifica se há placas associadas a mais de uma carga
-                placas_multiplas_cargas = pedidos_df.groupby('Placa')['Carga'].nunique()
-                placas_invalidas = placas_multiplas_cargas[placas_multiplas_cargas > 1]
-
-                if not placas_invalidas.empty:
-                    st.error("Erro: As seguintes placas estão associadas a mais de uma carga:")
-                    for placa, num_cargas in placas_invalidas.items():
-                        st.write(f"- Placa {placa}: {num_cargas} cargas")
-                    st.stop()  # Interrompe a execução se houver placas inválidas
-            else:
-                st.warning("As colunas 'Placa' e/ou 'Carga' não foram encontradas na planilha. Verifique os dados enviados.")
-
             if st.button("Roteirizar"):
                 st.write("Roteirização em execução...")
                 progress_bar = st.empty()
