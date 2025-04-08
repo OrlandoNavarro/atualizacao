@@ -88,11 +88,6 @@ def main():
             pedidos_df['Longitude'] = pedidos_df['Longitude'].fillna(0)
             salvar_coordenadas(coordenadas_salvas)
             
-            # Verifica se a coluna "Carga" existe e, se existir, define "N Carga" com os mesmos dados
-            if "Carga" in pedidos_df.columns:
-                pedidos_df["N Carga"] = pedidos_df["Carga"]
-                pedidos_df = pedidos_df.drop(columns=["Carga"])
-            
             st.dataframe(pedidos_df)
             st.write("Cabeçalho da planilha:", list(pedidos_df.columns))
             
@@ -194,11 +189,6 @@ def main():
             pedidos_df['Latitude'] = pedidos_df['Latitude'].fillna(0)
             pedidos_df['Longitude'] = pedidos_df['Longitude'].fillna(0)       
             salvar_coordenadas(coordenadas_salvas)
-            
-            # Verifica se a coluna "Carga" existe e, se existir, define "N Carga" com os mesmos dados
-            if "Carga" in pedidos_df.columns:
-                pedidos_df["N Carga"] = pedidos_df["Carga"]
-                pedidos_df = pedidos_df.drop(columns=["Carga"])
             
             st.dataframe(pedidos_df)
             if st.button("Salvar alterações na planilha"):
