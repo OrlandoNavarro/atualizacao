@@ -9,10 +9,54 @@ import ia_analise_pedidos as ia
 def main():
     st.title("Roteirizador de Pedidos")
     
-    # Menu lateral para selecionar a funcionalidade
-    menu_opcao = st.sidebar.radio("Menu", options=["Cadastro de Frota e Upload de Planilha", "IA para Análise de Pedidos"])
+    # Injetar CSS para remover os marcadores do radio e adicionar espaçamento entre os itens
+    st.markdown(
+        """
+        <style>
+        /* Remove bullets e adiciona espaço entre os itens */
+        div[data-baseweb="radio"] ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        div[data-baseweb="radio"] li {
+            margin-bottom: 10px;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
     
-    if menu_opcao == "Cadastro de Frota e Upload de Planilha":
+    # Menu lateral com três opções
+    menu_opcao = st.sidebar.radio("Menu", options=[
+        "Dashboard", 
+        "Cadastro de Frota e Upload de Planilha", 
+        "IA para Análise de Pedidos"
+    ])
+    
+    if menu_opcao == "Dashboard":
+        st.header("Dashboard - Envio de Pedidos")
+        st.write("Bem-vindo ao Dashboard! Envie a planilha de pedidos para iniciar:")
+        
+        # Processa a planilha de pedidos
+        pedidos_result = processar_pedidos()
+        if pedidos_result is None:
+            st.info("Aguardando envio da planilha de pedidos.")
+        else:
+            pedidos_df, coordenadas_salvas = pedidos_result
+            with st.spinner("Obtendo coordenadas..."):
+                pedidos_df['Latitude'] = pedidos_df['Endereço Completo'].apply(
+                    lambda x: ia.obter_coordenadas_com_fallback(x, coordenadas_salvas)[0]
+                )
+                pedidos_df['Longitude'] = pedidos_df['Endereço Completo'].apply(
+                    lambda x: ia.obter_coordenadas_com_fallback(x, coordenadas_salvas)[1]
+                )
+            salvar_coordenadas(coordenadas_salvas)
+            if pedidos_df['Latitude'].isnull().any() or pedidos_df['Longitude'].isnull().any():
+                st.error("Alguns endereços não obtiveram coordenadas. Verifique os dados.")
+                return
+            st.dataframe(pedidos_df)
+            
+    elif menu_opcao == "Cadastro de Frota e Upload de Planilha":
         st.header("Cadastro de Caminhões e Upload de Pedidos")
         
         # Aba de cadastro de caminhões
@@ -89,8 +133,6 @@ def main():
     
     elif menu_opcao == "IA para Análise de Pedidos":
         st.header("IA para Análise de Pedidos")
-        # Aqui você pode adicionar controles e visualizações para a análise via IA,
-        # por exemplo, gráficos, análises, etc.
         st.info("Funcionalidade de análise via IA em desenvolvimento.")
 
 if __name__ == "__main__":
