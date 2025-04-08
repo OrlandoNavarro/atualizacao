@@ -74,7 +74,7 @@ def main():
             **Aplicar VRP:**  
             Distribui os pedidos entre os veículos disponíveis, respeitando as restrições de capacidade e minimizando a distância percorrida.
             """)
-\
+
             
             if st.button("Roteirizar"):
                 st.write("Roteirização em execução...")
