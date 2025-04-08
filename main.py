@@ -8,6 +8,32 @@ from gerenciamento_frota import cadastrar_caminhoes
 from subir_pedidos import processar_pedidos, salvar_coordenadas
 import ia_analise_pedidos as ia
 
+def definir_ordem_entrega_por_carga(pedidos_df, ordem_tsp):
+    """
+    Define a ordem de entrega para o TSP utilizando o número da carga.
+    
+    Para cada carga, os pedidos serão ordenados conforme a ordem TSP e,
+    em seguida, será atribuída uma sequência a cada pedido, no formato "Carga-Seq".
+    Exemplo: Para a carga 1, se houver quatro pedidos, eles serão marcados como "1-1", "1-2", "1-3", "1-4".
+    
+    Parâmetros:
+      pedidos_df (DataFrame): DataFrame contendo a coluna 'Carga'.
+      ordem_tsp (list): Lista com a ordem resultante do algoritmo TSP (índices dos pedidos).
+      
+    Retorna:
+      DataFrame: pedidos_df com nova coluna 'Ordem de Entrega TSP'.
+    """
+    # Reordena o DataFrame segundo a ordem TSP obtida
+    df_ord = pedidos_df.loc[ordem_tsp].copy()
+    df_ord['Ordem de Entrega TSP'] = ""
+    
+    # Agrupa por carga e atribui sequência em cada grupo
+    for carga, grupo in df_ord.groupby('Carga'):
+        seq = list(range(1, len(grupo) + 1))
+        df_ord.loc[grupo.index, 'Ordem de Entrega TSP'] = [f"{carga}-{s}" for s in seq]
+    
+    return df_ord
+
 def main():
     st.title("Roteirizador de Pedidos")
     
@@ -102,9 +128,9 @@ def main():
                     st.write("\n".join(melhor_rota))
                     st.write(f"Menor distância TSP: {menor_distancia}")
                     
-                    # Define a Ordem de Entrega TSP baseada no número da carga
-                    # (Cada carga deve ser única para a entrega do dia)
-                    pedidos_df['Ordem de Entrega TSP'] = pedidos_df['Carga']
+                    # Define a Ordem de Entrega TSP com base no número da carga
+                    # Cada carga terá sua sequência única (ex: 1-1, 1-2, etc.)
+                    pedidos_df = definir_ordem_entrega_por_carga(pedidos_df, melhor_rota)
                 
                 if aplicar_vrp:
                     rota_vrp = ia.resolver_vrp(pedidos_df, caminhoes_df)
