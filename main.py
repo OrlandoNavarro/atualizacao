@@ -89,7 +89,6 @@ def main():
             pedidos_df['Longitude'] = pedidos_df['Longitude'].fillna(0)
             salvar_coordenadas(coordenadas_salvas)
             st.dataframe(pedidos_df)
-            st.write("Cabeçalho da planilha:", list(pedidos_df.columns))
             
             st.markdown("### Configurações para Roteirização")
             n_clusters = st.slider("Número de regiões para agrupar", min_value=1, max_value=10, value=3)
@@ -97,15 +96,13 @@ def main():
             max_pedidos = st.slider("Número máximo de pedidos por veículo", min_value=1, max_value=30, value=12)
             aplicar_tsp = st.checkbox("Aplicar TSP")
             
-            # Bloco para explicar o TSP
             st.markdown("""
             **Aplicar TSP:**  
             Utiliza um algoritmo genético para encontrar a rota que minimiza a distância total entre todos os pontos de entrega.
             """)
-
+            
             aplicar_vrp = st.checkbox("Aplicar VRP")
-
-            # Bloco para explicar o VRP
+            
             st.markdown("""
             **Aplicar VRP:**  
             Distribui os pedidos entre os veículos disponíveis, respeitando as restrições de capacidade e minimizando a distância percorrida.
