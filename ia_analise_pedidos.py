@@ -194,7 +194,7 @@ def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, ma
     atribuindo números de carga e placas.
     """
     # Inicializa as colunas
-    pedidos_df['Nº Carga'] = 0
+    pedidos_df['Carga'] = 0
     pedidos_df['Placa'] = ""
     carga_numero = 1
     
@@ -218,13 +218,13 @@ def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, ma
             ]
             pedidos_alocados = pedidos_alocados.sample(n=min(max_pedidos, len(pedidos_alocados)))
             if not pedidos_alocados.empty:
-                pedidos_df.loc[pedidos_alocados.index, 'Nº Carga'] = carga_numero
+                pedidos_df.loc[pedidos_alocados.index, 'Carga'] = carga_numero
                 pedidos_df.loc[pedidos_alocados.index, 'Placa'] = caminhao['Placa']
                 capacidade_peso -= pedidos_alocados['Peso dos Itens'].sum()
                 capacidade_caixas -= pedidos_alocados['Qtde. dos Itens'].sum()
                 carga_numero += 1
     
-    if pedidos_df['Placa'].isnull().any() or pedidos_df['Nº Carga'].isnull().any():
+    if pedidos_df['Placa'].isnull().any() or pedidos_df['Carga'].isnull().any():
         st.error("Não foi possível atribuir placas ou números de carga a alguns pedidos.")
     
     return pedidos_df
