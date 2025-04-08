@@ -180,16 +180,28 @@ def main():
         else:
             pedidos_df, coordenadas_salvas = pedidos_result
             with st.spinner("Obtendo coordenadas..."):
-                pedidos_df['Latitude'] = pedidos_df['Endereço Completo'].apply(
-                    lambda x: ia.obter_coordenadas_com_fallback(x, coordenadas_salvas)[0]
+                # Atualiza apenas se não houver coordenadas (ou estiverem zeradas)
+                pedidos_df['Latitude'] = pedidos_df.apply(
+                    lambda row: ia.obter_coordenadas_com_fallback(row['Endereço Completo'], coordenadas_salvas)[0]
+                        if ('Latitude' not in row or row['Latitude'] == 0) else row['Latitude'],
+                    axis=1
                 )
-                pedidos_df['Longitude'] = pedidos_df['Endereço Completo'].apply(
-                    lambda x: ia.obter_coordenadas_com_fallback(x, coordenadas_salvas)[1]
+                pedidos_df['Longitude'] = pedidos_df.apply(
+                    lambda row: ia.obter_coordenadas_com_fallback(row['Endereço Completo'], coordenadas_salvas)[1]
+                        if ('Longitude' not in row or row['Longitude'] == 0) else row['Longitude'],
+                    axis=1
                 )
             pedidos_df['Latitude'] = pedidos_df['Latitude'].fillna(0)
             pedidos_df['Longitude'] = pedidos_df['Longitude'].fillna(0)       
             salvar_coordenadas(coordenadas_salvas)
             
+            # Caso falte algum dado, exibe um aviso e permite que a planilha seja carregada
+            colunas_necessarias = ['Latitude', 'Longitude']
+            for col in colunas_necessarias:
+                if col not in pedidos_df.columns:
+                    st.warning(f"A coluna '{col}' não foi encontrada. Ela será criada com valor 0.")
+                    pedidos_df[col] = 0
+
             st.dataframe(pedidos_df)
             if st.button("Salvar alterações na planilha"):
                 pedidos_df.to_excel("database/Pedidos.xlsx", index=False)
