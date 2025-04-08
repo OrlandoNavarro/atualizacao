@@ -19,6 +19,7 @@ def definir_ordem_por_carga(pedidos_df, ordem_tsp):
       ordem_tsp (list): Lista com os endereços na ordem definida pelo algoritmo TSP.
       
     Retorna:
+    
       DataFrame: Com a coluna 'Ordem de Entrega TSP' atualizada.
     """
     # Cria um dicionário para mapeamento do endereço para sua posição na melhor rota

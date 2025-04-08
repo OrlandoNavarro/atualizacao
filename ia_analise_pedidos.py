@@ -299,6 +299,13 @@ def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, ma
         "Longitude",
         "Ordem de Entrega TSP"
     ]
+
+    # Para cada coluna desejada que não existe, crie-a com valor vazio
+    for col in colunas_desejadas:
+        if col not in pedidos_df.columns:
+            pedidos_df[col] = ""
+
+    # Reordena o DataFrame conforme a sequência definida
     pedidos_df = pedidos_df[colunas_desejadas]
     
     return pedidos_df
