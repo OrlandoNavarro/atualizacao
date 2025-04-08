@@ -60,6 +60,15 @@ def main():
             percentual_frota = st.slider("Capacidade da frota a ser usada (%)", min_value=0, max_value=100, value=100)
             max_pedidos = st.slider("Número máximo de pedidos por veículo", min_value=1, max_value=20, value=5)
             aplicar_tsp = st.checkbox("Aplicar TSP")
+            
+            st.markdown("""
+            **Aplicar TSP:**  
+            Utiliza um algoritmo genético para encontrar a rota que minimiza a distância total entre todos os pontos de entrega.
+
+            **Aplicar VRP:**  
+            Distribui os pedidos entre os veículos disponíveis, respeitando as restrições de capacidade e minimizando a distância percorrida.
+            """)
+
             aplicar_vrp = st.checkbox("Aplicar VRP")
             
             if st.button("Roteirizar"):

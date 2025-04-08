@@ -7,6 +7,9 @@ from geopy.distance import geodesic
 from sklearn.cluster import KMeans
 import folium
 from config import endereco_partida, endereco_partida_coords
+import math
+import pandas as pd
+import logging
 
 def obter_coordenadas_opencage(endereco):
     """
@@ -123,11 +126,67 @@ def resolver_tsp_genetico(G):
 
 def resolver_vrp(pedidos_df, caminhoes_df):
     """
-    Placeholder para a resolução do VRP.
-    Implementação usando OR-Tools ou outra biblioteca pode ser adicionada futuramente.
+    Resolve o problema do VRP utilizando OR-Tools.
+    
+    O algoritmo constrói uma matriz de distâncias com base nas coordenadas dos pedidos.
+    O número de veículos é determinado pelo número de caminhões disponíveis.
+    
+    Retorna:
+      dict: Rotas para cada veículo, ou
+      str: Mensagem de erro se a solução não for encontrada ou se OR-Tools não estiver instalado.
     """
-    st.info("Resolver VRP ainda não implementado.")
-    return None
+    try:
+        from ortools.constraint_solver import routing_enums_pb2, pywrapcp
+    except ImportError:
+        return "Erro: OR-Tools não está instalado. Instale com: pip3 install ortools"
+
+    # Obtenha as coordenadas dos pedidos
+    coords = list(zip(pedidos_df['Latitude'], pedidos_df['Longitude']))
+    if not coords:
+        return "Sem pedidos para roteirização."
+
+    depot = 0  # Usando o primeiro pedido (ou defina um depot específico)
+
+    def calcular_dist(i, j):
+        return int(math.sqrt((coords[i][0] - coords[j][0])**2 + (coords[i][1] - coords[j][1])**2) * 1000)
+
+    N = len(coords)
+    distance_matrix = [[calcular_dist(i, j) for j in range(N)] for i in range(N)]
+
+    num_vehicles = len(caminhoes_df)
+    if num_vehicles < 1:
+        return "Nenhum caminhão disponível para a roteirização."
+
+    # Cria o index manager e o modelo de roteamento
+    manager = pywrapcp.RoutingIndexManager(N, num_vehicles, depot)
+    routing = pywrapcp.RoutingModel(manager)
+
+    def distance_callback(from_index, to_index):
+        from_node = manager.IndexToNode(from_index)
+        to_node = manager.IndexToNode(to_index)
+        return distance_matrix[from_node][to_node]
+
+    transit_callback_index = routing.RegisterTransitCallback(distance_callback)
+    routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
+
+    # Parâmetros de busca
+    search_parameters = pywrapcp.DefaultRoutingSearchParameters()
+    search_parameters.first_solution_strategy = (routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC)
+
+    solution = routing.SolveWithParameters(search_parameters)
+    if solution:
+        routes = {}
+        for vehicle_id in range(num_vehicles):
+            index = routing.Start(vehicle_id)
+            route = []
+            while not routing.IsEnd(index):
+                node = manager.IndexToNode(index)
+                route.append(pedidos_df.iloc[node]['Endereço Completo'])
+                index = solution.Value(routing.NextVar(index))
+            routes[f"Veículo {vehicle_id + 1}"] = route
+        return routes
+    else:
+        return "Não foi encontrada solução para o problema VRP."
 
 def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, max_pedidos, n_clusters):
     """
