@@ -87,6 +87,12 @@ def main():
             pedidos_df['Latitude'] = pedidos_df['Latitude'].fillna(0)
             pedidos_df['Longitude'] = pedidos_df['Longitude'].fillna(0)
             salvar_coordenadas(coordenadas_salvas)
+            
+            # Verifica se a coluna "Carga" existe e, se existir, define "N Carga" com os mesmos dados
+            if "Carga" in pedidos_df.columns:
+                pedidos_df["N Carga"] = pedidos_df["Carga"]
+                pedidos_df = pedidos_df.drop(columns=["Carga"])
+            
             st.dataframe(pedidos_df)
             st.write("Cabeçalho da planilha:", list(pedidos_df.columns))
             
@@ -142,28 +148,6 @@ def main():
                     rota_vrp = ia.resolver_vrp(pedidos_df, caminhoes_df)
                     st.write(f"Melhor rota VRP: {rota_vrp}")
                 
-                # Garante que a coluna "N Carga" seja igual à coluna "Carga"
-                pedidos_df["N Carga"] = pedidos_df["Carga"]
-
-                # Define a sequência desejada de colunas
-                colunas_desejadas = [
-                    "Placa",
-                    "N Carga",              # Agora "N Carga" contém o número da carga (igual a "Carga")
-                    "N Pedido",
-                    "Cod. Cliente",
-                    "Nome Cliente",
-                    "Endereco Completo",
-                    "Regiao",
-                    "Qtde dos Itens",
-                    "Peso dos Itens",
-                    "Latitude",
-                    "Longitude",
-                    "Ordem de Entrega TSP"
-                ]
-
-                # Reordena o DataFrame conforme a sequência definida
-                pedidos_df = pedidos_df[colunas_desejadas]
-
                 st.write("Dados dos Pedidos:")
                 st.dataframe(pedidos_df)
                 mapa = ia.criar_mapa(pedidos_df)
@@ -210,6 +194,12 @@ def main():
             pedidos_df['Latitude'] = pedidos_df['Latitude'].fillna(0)
             pedidos_df['Longitude'] = pedidos_df['Longitude'].fillna(0)       
             salvar_coordenadas(coordenadas_salvas)
+            
+            # Verifica se a coluna "Carga" existe e, se existir, define "N Carga" com os mesmos dados
+            if "Carga" in pedidos_df.columns:
+                pedidos_df["N Carga"] = pedidos_df["Carga"]
+                pedidos_df = pedidos_df.drop(columns=["Carga"])
+            
             st.dataframe(pedidos_df)
             if st.button("Salvar alterações na planilha"):
                 pedidos_df.to_excel("database/Pedidos.xlsx", index=False)
