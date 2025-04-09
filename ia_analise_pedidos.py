@@ -327,7 +327,7 @@ def criar_mapa(pedidos_df):
     ).add_to(mapa)
     return mapa
 
-def validar_distancias(coordenadas, distancia_maxima_km=50):
+def validar_distancias(coordenadas, distancia_maxima_km=550):
     """
     Verifica se todas as coordenadas estão dentro de uma distância máxima aceitável.
 
