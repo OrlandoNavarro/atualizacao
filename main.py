@@ -82,7 +82,9 @@ def main():
                 pedidos_df, coordenadas_salvas = pedidos_result
                 
                 # Carrega coordenadas salvas do arquivo
+                st.write("Carregando coordenadas salvas...")
                 coordenadas_salvas = carregar_coordenadas_salvas("database/coordenadas_salvas.xlsx")
+                st.write("Coordenadas carregadas com sucesso.")
                 
                 with st.spinner("Obtendo coordenadas..."):
                     pedidos_df['Latitude'] = pedidos_df['Endereço Completo'].apply(
