@@ -96,4 +96,4 @@ def run_genetic_algorithm(pedidos_df, caminhoes_df, geracoes=100, tamanho_pop=50
         if melhor_iter > melhor_fitness:
             melhor_fitness = melhor_iter
             melhor_solucao = population[fitnesses.index(melhor_iter)]
-    return {"solucao": melhor_solucao, "fitness": melhor_fitness}
+    return {"solucao": melhor_solucao, "fitness": melhor_fitness} 
