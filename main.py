@@ -13,8 +13,37 @@ from database.ia_analise_pedidos import atualizar_pedido, carregar_coordenadas_s
 
 # Exemplo de função para definir a ordem de entrega por carga
 def definir_ordem_por_carga(pedidos_df, ordem_tsp):
-    # (Implementação da função)
-    pass
+    """
+    Define a coluna 'Ordem de Entrega TSP' com base na ordem definida pelo TSP,
+    agrupando os pedidos por 'Carga' e atribuindo uma sequência para cada entrega.
+    
+    Parâmetros:
+      pedidos_df (DataFrame): DataFrame que contém a coluna 'Carga' e 'Endereço Completo'.
+      ordem_tsp (list): Lista com os endereços na ordem definida pelo algoritmo TSP.
+      
+    Retorna:
+      DataFrame: Com a coluna 'Ordem de Entrega TSP' atualizada.
+    """
+    # Cria um dicionário para mapeamento do endereço para sua posição na melhor rota
+    rota_indices = {endereco: idx for idx, endereco in enumerate(ordem_tsp)}
+    
+    # Inicializa a coluna de ordem vazia
+    pedidos_df['Ordem de Entrega TSP'] = ""
+    
+    # Para cada carga, ordena os pedidos conforme a posição na melhor rota e atribui uma sequência
+    for carga in pedidos_df['Carga'].unique():
+        mask = pedidos_df['Carga'] == carga
+        df_carga = pedidos_df.loc[mask].copy()
+        # Ordena os pedidos desta carga com base na posição encontrada na melhor rota.
+        df_carga = df_carga.sort_values(
+            by='Endereço Completo', 
+            key=lambda col: col.map(lambda x: rota_indices.get(x, float('inf')))
+        )
+        # Atribui sequência numérica para cada pedido do grupo
+        for seq, idx in enumerate(df_carga.index, start=1):
+            pedidos_df.at[idx, 'Ordem de Entrega TSP'] = f"{carga}-{seq}"
+    
+    return pedidos_df
 
 def main():
     st.title("Roteirizador de Pedidos")
