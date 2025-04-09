@@ -238,11 +238,6 @@ def main():
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                     )
                     
-            st.markdown("**Edite a planilha de Pedidos, se necessário:**")
-            dados_editados = st.data_editor(pedidos_df, num_rows="dynamic")
-            if st.button("Salvar alterações na planilha"):
-                dados_editados.to_excel("database/Pedidos.xlsx", index=False)
-                st.success("Planilha editada e salva com sucesso!")
     
     elif menu_opcao == "Cadastro da Frota":
         st.header("Cadastro da Frota")
