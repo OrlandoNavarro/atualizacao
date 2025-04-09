@@ -212,7 +212,7 @@ def resolver_vrp(pedidos_df, caminhoes_df):
 
 from geopy.distance import geodesic
 
-def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, max_pedidos, n_clusters, distancia_maxima_km=550):
+def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, max_pedidos, n_clusters, distancia_maxima_km=50):
     """
     Otimiza a alocação dos pedidos aos caminhões disponíveis, agrupando os pedidos em regiões,
     atribuindo números de carga e placas, e validando distâncias.
@@ -312,7 +312,7 @@ def criar_mapa(pedidos_df):
     """
     Cria e retorna um mapa Folium com marcadores para cada pedido e para o endereço de partida.
     """
-    mapa = folium.Map(location=endereco_partida_coords, zoom_start=12)
+    mapa = folium.Map(location=endereco_partida_coords, zoom_start=8)
     for _, row in pedidos_df.iterrows():
         popup_text = f"<b>Placa: {row['Placa']}</b><br>Endereço: {row['Endereço Completo']}"
         folium.Marker(
@@ -327,7 +327,7 @@ def criar_mapa(pedidos_df):
     ).add_to(mapa)
     return mapa
 
-def validar_distancias(coordenadas, distancia_maxima_km=550):
+def validar_distancias(coordenadas, distancia_maxima_km=50):
     """
     Verifica se todas as coordenadas estão dentro de uma distância máxima aceitável.
 
