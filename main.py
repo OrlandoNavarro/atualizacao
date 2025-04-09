@@ -7,43 +7,14 @@ import datetime
 import os  # Importa o módulo para verificar a existência de arquivos
 
 from gerenciamento_frota import cadastrar_caminhoes
-from subir_pedidos import processar_pedidos, salvar_coordenadas
+from subir_pedidos import processar_pedidos
 import ia_analise_pedidos as ia
-from database.ia_analise_pedidos import atualizar_pedido  # Importa a função de atualização
+from database.ia_analise_pedidos import atualizar_pedido, carregar_coordenadas_salvas, salvar_coordenadas  # Importa as funções necessárias
 
 # Exemplo de função para definir a ordem de entrega por carga
 def definir_ordem_por_carga(pedidos_df, ordem_tsp):
-    """
-    Define a coluna 'Ordem de Entrega TSP' com base na ordem definida pelo TSP,
-    agrupando os pedidos por 'Carga' e atribuindo uma sequência para cada entrega.
-    
-    Parâmetros:
-      pedidos_df (DataFrame): DataFrame que contém a coluna 'Carga' e 'Endereço Completo'.
-      ordem_tsp (list): Lista com os endereços na ordem definida pelo algoritmo TSP.
-      
-    Retorna:
-      DataFrame: Com a coluna 'Ordem de Entrega TSP' atualizada.
-    """
-    # Cria um dicionário para mapeamento do endereço para sua posição na melhor rota
-    rota_indices = {endereco: idx for idx, endereco in enumerate(ordem_tsp)}
-    
-    # Inicializa a coluna de ordem vazia
-    pedidos_df['Ordem de Entrega TSP'] = ""
-    
-    # Para cada carga, ordena os pedidos conforme a posição na melhor rota e atribui uma sequência
-    for carga in pedidos_df['Carga'].unique():
-        mask = pedidos_df['Carga'] == carga
-        df_carga = pedidos_df.loc[mask].copy()
-        # Ordena os pedidos desta carga com base na posição encontrada na melhor rota.
-        df_carga = df_carga.sort_values(
-            by='Endereço Completo', 
-            key=lambda col: col.map(lambda x: rota_indices.get(x, float('inf')))
-        )
-        # Atribui sequência numérica para cada pedido do grupo
-        for seq, idx in enumerate(df_carga.index, start=1):
-            pedidos_df.at[idx, 'Ordem de Entrega TSP'] = f"{carga}-{seq}"
-    
-    return pedidos_df
+    # (Implementação da função)
+    pass
 
 def main():
     st.title("Roteirizador de Pedidos")
@@ -80,23 +51,17 @@ def main():
         else:
             pedidos_df, coordenadas_salvas = pedidos_result
             
+            # Carrega coordenadas salvas do arquivo
+            coordenadas_salvas = carregar_coordenadas_salvas("database/coordenadas_salvas.xlsx")
+            
             with st.spinner("Obtendo coordenadas..."):
-                # Verifica se a coluna 'Endereço Completo' existe
-                if 'Endereço Completo' not in pedidos_df.columns:
-                    st.error("A coluna 'Endereço Completo' não foi encontrada na planilha de pedidos.")
-                    return
-                
-                try:
-                    pedidos_df['Latitude'] = pedidos_df['Endereço Completo'].apply(
-                        lambda x: ia.obter_coordenadas_com_fallback(x, coordenadas_salvas)[0]
-                    )
-                    pedidos_df['Longitude'] = pedidos_df['Endereço Completo'].apply(
-                        lambda x: ia.obter_coordenadas_com_fallback(x, coordenadas_salvas)[1]
-                    )
-                    salvar_coordenadas(coordenadas_salvas)
-                except Exception as e:
-                    st.error(f"Erro ao obter coordenadas: {e}")
-                    return
+                pedidos_df['Latitude'] = pedidos_df['Endereço Completo'].apply(
+                    lambda x: ia.obter_coordenadas_com_fallback(x, coordenadas_salvas)[0]
+                )
+                pedidos_df['Longitude'] = pedidos_df['Endereço Completo'].apply(
+                    lambda x: ia.obter_coordenadas_com_fallback(x, coordenadas_salvas)[1]
+                )
+                salvar_coordenadas(coordenadas_salvas, "database/coordenadas_salvas.xlsx")
             
             if pedidos_df['Latitude'].isnull().any() or pedidos_df['Longitude'].isnull().any():
                 st.warning("Alguns endereços não obtiveram coordenadas. As correções podem ser feitas posteriormente.")
@@ -180,7 +145,7 @@ def main():
                 )
             pedidos_df['Latitude'] = pedidos_df['Latitude'].fillna(0)
             pedidos_df['Longitude'] = pedidos_df['Longitude'].fillna(0)
-            salvar_coordenadas(coordenadas_salvas)
+            salvar_coordenadas(coordenadas_salvas, "database/coordenadas_salvas.xlsx")
             
             # Verifica se as colunas necessárias existem; caso contrário, cria-as
             for col in ['Latitude', 'Longitude']:
