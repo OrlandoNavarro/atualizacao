@@ -87,13 +87,9 @@ def main():
                 st.write("Coordenadas carregadas com sucesso.")
                 
                 with st.spinner("Obtendo coordenadas..."):
-                    pedidos_df['Latitude'] = pedidos_df['Endereço Completo'].apply(
-                        lambda x: ia.obter_coordenadas_com_fallback(x, coordenadas_salvas)[0]
-                    )
-                    pedidos_df['Longitude'] = pedidos_df['Endereço Completo'].apply(
-                        lambda x: ia.obter_coordenadas_com_fallback(x, coordenadas_salvas)[1]
-                    )
-                    salvar_coordenadas(coordenadas_salvas, "database/coordenadas_salvas.xlsx")
+                    # Aqui você pode implementar a lógica para obter coordenadas de outra forma
+                    # por exemplo, diretamente de um banco de dados ou serviço externo
+                    pass
                 
                 if pedidos_df['Latitude'].isnull().any() or pedidos_df['Longitude'].isnull().any():
                     st.warning("Alguns endereços não obtiveram coordenadas. As correções podem ser feitas posteriormente.")
@@ -168,16 +164,9 @@ def main():
             try:
                 pedidos_df, coordenadas_salvas = pedidos_result
                 with st.spinner("Atualizando coordenadas..."):
-                    pedidos_df['Latitude'] = pedidos_df.apply(
-                        lambda row: ia.obter_coordenadas_com_fallback(row['Endereço Completo'], coordenadas_salvas)[0]
-                            if row.get('Latitude', 0) == 0 else row['Latitude'],
-                        axis=1
-                    )
-                    pedidos_df['Longitude'] = pedidos_df.apply(
-                        lambda row: ia.obter_coordenadas_com_fallback(row['Endereço Completo'], coordenadas_salvas)[1]
-                            if row.get('Longitude', 0) == 0 else row['Longitude'],
-                        axis=1
-                    )
+                    # Aqui você pode implementar a lógica para obter coordenadas de outra forma
+                    # por exemplo, diretamente de um banco de dados ou serviço externo
+                    pass
                 pedidos_df['Latitude'] = pedidos_df['Latitude'].fillna(0)
                 pedidos_df['Longitude'] = pedidos_df['Longitude'].fillna(0)
                 salvar_coordenadas(coordenadas_salvas, "database/coordenadas_salvas.xlsx")
