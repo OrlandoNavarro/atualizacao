@@ -86,6 +86,12 @@ def main():
                 coordenadas_salvas = carregar_coordenadas_salvas("database/coordenadas_salvas.xlsx")
                 st.write("Coordenadas carregadas com sucesso.")
                 
+                # Garante que as colunas 'Latitude' e 'Longitude' existam no DataFrame
+                if 'Latitude' not in pedidos_df.columns:
+                    pedidos_df['Latitude'] = pd.Series([None] * len(pedidos_df))
+                if 'Longitude' not in pedidos_df.columns:
+                    pedidos_df['Longitude'] = pd.Series([None] * len(pedidos_df))
+
                 with st.spinner("Obtendo coordenadas..."):
                     # Aqui você pode implementar a lógica para obter coordenadas de outra forma
                     # por exemplo, diretamente de um banco de dados ou serviço externo
@@ -163,6 +169,13 @@ def main():
         else:
             try:
                 pedidos_df, coordenadas_salvas = pedidos_result
+
+                # Garante que as colunas 'Latitude' e 'Longitude' existam no DataFrame
+                if 'Latitude' not in pedidos_df.columns:
+                    pedidos_df['Latitude'] = pd.Series([None] * len(pedidos_df))
+                if 'Longitude' not in pedidos_df.columns:
+                    pedidos_df['Longitude'] = pd.Series([None] * len(pedidos_df))
+
                 with st.spinner("Atualizando coordenadas..."):
                     # Aqui você pode implementar a lógica para obter coordenadas de outra forma
                     # por exemplo, diretamente de um banco de dados ou serviço externo
