@@ -81,13 +81,22 @@ def main():
             pedidos_df, coordenadas_salvas = pedidos_result
             
             with st.spinner("Obtendo coordenadas..."):
-                pedidos_df['Latitude'] = pedidos_df['Endereço Completo'].apply(
-                    lambda x: ia.obter_coordenadas_com_fallback(x, coordenadas_salvas)[0]
-                )
-                pedidos_df['Longitude'] = pedidos_df['Endereço Completo'].apply(
-                    lambda x: ia.obter_coordenadas_com_fallback(x, coordenadas_salvas)[1]
-                )
-                salvar_coordenadas(coordenadas_salvas)
+                # Verifica se a coluna 'Endereço Completo' existe
+                if 'Endereço Completo' not in pedidos_df.columns:
+                    st.error("A coluna 'Endereço Completo' não foi encontrada na planilha de pedidos.")
+                    return
+                
+                try:
+                    pedidos_df['Latitude'] = pedidos_df['Endereço Completo'].apply(
+                        lambda x: ia.obter_coordenadas_com_fallback(x, coordenadas_salvas)[0]
+                    )
+                    pedidos_df['Longitude'] = pedidos_df['Endereço Completo'].apply(
+                        lambda x: ia.obter_coordenadas_com_fallback(x, coordenadas_salvas)[1]
+                    )
+                    salvar_coordenadas(coordenadas_salvas)
+                except Exception as e:
+                    st.error(f"Erro ao obter coordenadas: {e}")
+                    return
             
             if pedidos_df['Latitude'].isnull().any() or pedidos_df['Longitude'].isnull().any():
                 st.warning("Alguns endereços não obtiveram coordenadas. As correções podem ser feitas posteriormente.")
