@@ -5,7 +5,7 @@ import requests
 import time
 import datetime
 import os
-from multiprocessing import Pool  # Para processamento paralelo
+from geopy.distance import geodesic  # Biblioteca para calcular distâncias geográficas
 
 st.set_page_config(layout="wide")
 
@@ -30,6 +30,18 @@ def definir_ordem_por_carga(pedidos_df, ordem_tsp):
 
 def obter_coordenadas(x, coordenadas_salvas):
     return ia.obter_coordenadas_com_fallback(x, coordenadas_salvas)
+
+def verificar_distancias(pedidos_df, max_distancia_km):
+    regioes = pedidos_df['Região'].unique()
+    for regiao in regioes:
+        pedidos_regiao = pedidos_df[pedidos_df['Região'] == regiao]
+        coordenadas = pedidos_regiao[['Latitude', 'Longitude']].values
+        for i, coord1 in enumerate(coordenadas):
+            for coord2 in coordenadas[i+1:]:
+                distancia = geodesic(coord1, coord2).km
+                if distancia > max_distancia_km:
+                    return False, regiao
+    return True, None
 
 def main():
     st.title("Roteirizador de Pedidos")
@@ -67,12 +79,12 @@ def main():
             pedidos_df, coordenadas_salvas = pedidos_result
             
             with st.spinner("Obtendo coordenadas..."):
-                # Processamento paralelo para obter coordenadas
-                with Pool() as pool:
-                    coordenadas = pool.starmap(obter_coordenadas, [(x, coordenadas_salvas) for x in pedidos_df['Endereço Completo']])
-                pedidos_df['Latitude'] = [coord[0] for coord in coordenadas]
-                pedidos_df['Longitude'] = [coord[1] for coord in coordenadas]
-            
+                pedidos_df['Latitude'] = pedidos_df['Endereço Completo'].apply(
+                    lambda x: ia.obter_coordenadas_com_fallback(x, coordenadas_salvas)[0]
+                )
+                pedidos_df['Longitude'] = pedidos_df['Endereço Completo'].apply(
+                    lambda x: ia.obter_coordenadas_com_fallback(x, coordenadas_salvas)[1]
+                )
             pedidos_df['Latitude'] = pedidos_df['Latitude'].fillna(0)
             pedidos_df['Longitude'] = pedidos_df['Longitude'].fillna(0)
             salvar_coordenadas(coordenadas_salvas)
@@ -82,6 +94,7 @@ def main():
             n_clusters = st.slider("Número de regiões para agrupar", min_value=1, max_value=10, value=1)
             percentual_frota = st.slider("Capacidade da frota a ser usada (%)", min_value=0, max_value=100, value=100)
             max_pedidos = st.slider("Número máximo de pedidos por veículo", min_value=1, max_value=30, value=12)
+            max_distancia_km = st.slider("Distância máxima entre pedidos (km)", min_value=1, max_value=100, value=50)
             
             aplicar_tsp = st.checkbox("Aplicar TSP")
             aplicar_vrp = st.checkbox("Aplicar VRP")
@@ -172,6 +185,12 @@ def main():
                     st.stop()
 
                 pedidos_df = ia.otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, max_pedidos, n_clusters)
+
+                # Verifica se as distâncias entre pedidos são menores que a distância máxima permitida
+                distancias_validas, regiao_problema = verificar_distancias(pedidos_df, max_distancia_km)
+                if not distancias_validas:
+                    st.error(f"Erro: O caminhão foi alocado a pedidos muito distantes na região {regiao_problema}.")
+                    st.stop()
 
                 if aplicar_tsp:
                     G = ia.criar_grafo_tsp(pedidos_df)
