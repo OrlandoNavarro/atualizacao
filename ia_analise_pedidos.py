@@ -312,7 +312,7 @@ def criar_mapa(pedidos_df):
     """
     Cria e retorna um mapa Folium com marcadores para cada pedido e para o endereço de partida.
     """
-    mapa = folium.Map(location=endereco_partida_coords, zoom_start=8)
+    mapa = folium.Map(location=endereco_partida_coords, zoom_start=6)
     for _, row in pedidos_df.iterrows():
         popup_text = f"<b>Placa: {row['Placa']}</b><br>Endereço: {row['Endereço Completo']}"
         folium.Marker(
