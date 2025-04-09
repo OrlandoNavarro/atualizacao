@@ -11,7 +11,7 @@ from subir_pedidos import processar_pedidos, salvar_coordenadas
 import ia_analise_pedidos as ia
 
 # Coordenadas fixas do endereço de saída
-COORDENADAS_SAIDA = (LATITUDE_SAIDA, LONGITUDE_SAIDA)  # Substitua LATITUDE_SAIDA e LONGITUDE_SAIDA pelos valores reais
+COORDENADAS_SAIDA = (-22.9913938, -47.4595341)  # Substitua LATITUDE_SAIDA e LONGITUDE_SAIDA pelos valores reais
 
 # Exemplo de função para definir a ordem de entrega por carga
 def definir_ordem_por_carga(pedidos_df, ordem_tsp):
