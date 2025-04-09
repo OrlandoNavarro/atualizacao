@@ -9,6 +9,7 @@ import os  # Importa o módulo para verificar a existência de arquivos
 from gerenciamento_frota import cadastrar_caminhoes
 from subir_pedidos import processar_pedidos, salvar_coordenadas
 import ia_analise_pedidos as ia
+from ia_analise_pedidos import atualizar_pedido  # Importa a função de atualização
 
 # Exemplo de função para definir a ordem de entrega por carga
 def definir_ordem_por_carga(pedidos_df, ordem_tsp):
@@ -189,6 +190,18 @@ def main():
                     # Salva o arquivo no caminho especificado
                     pedidos_df.to_excel("database/Pedidos.xlsx", index=False)
                     st.success("Planilha editada e salva com sucesso!")
+
+                    # Atualiza os pedidos no banco de dados
+                    for index, row in pedidos_df.iterrows():
+                        atualizar_pedido(
+                            row['id'],
+                            row['Endereço Completo'],
+                            row['Latitude'],
+                            row['Longitude'],
+                            row['Peso dos Itens'],
+                            row['Ordem de Entrega TSP']
+                        )
+                    st.success("Dados atualizados no banco de dados com sucesso!")
                 except Exception as e:
                     st.error(f"Erro ao salvar a planilha: {e}")
     
