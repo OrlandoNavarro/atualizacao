@@ -17,4 +17,4 @@ OPENCAGE_API_KEY = os.environ.get("OPENCAGE_API_KEY", "6f522c67add14152926990afb
 
 # Parâmetros de rota de partida
 endereco_partida = "Avenida Antonio Ortega, 3604 - Pinhal, Cabreúva - SP, São Paulo, Brasil"
-endereco_partida_coords = (-23.0838, -47.1336)
+endereco_partida_coords = (-22.9913, -47.4595)
