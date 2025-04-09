@@ -154,8 +154,8 @@ def consulta_api_para_coordenadas(endereco):
       tuple: (latitude, longitude)
     """
     # Exemplo de coordenadas fictícias (substitua pela sua implementação real)
-    latitude = -23.55052
-    longitude = -46.633308
+    latitude = -00.00052
+    longitude = -00.003308
     return (latitude, longitude)
 
 criar_tabelas()
