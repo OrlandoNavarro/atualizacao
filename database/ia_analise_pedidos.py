@@ -42,6 +42,19 @@ def inserir_pedido(endereco, latitude, longitude, peso_itens, ordem_entrega):
     conn.commit()
     conn.close()
 
+def atualizar_pedido(id, endereco, latitude, longitude, peso_itens, ordem_entrega):
+    conn = conectar_banco()
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+    UPDATE pedidos
+    SET endereco = ?, latitude = ?, longitude = ?, peso_itens = ?, ordem_entrega = ?
+    WHERE id = ?
+    ''', (endereco, latitude, longitude, peso_itens, ordem_entrega, id))
+    
+    conn.commit()
+    conn.close()
+
 def inserir_caminhao(modelo, capacidade):
     conn = conectar_banco()
     cursor = conn.cursor()
