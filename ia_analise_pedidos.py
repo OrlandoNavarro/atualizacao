@@ -212,7 +212,7 @@ def resolver_vrp(pedidos_df, caminhoes_df):
 
 from geopy.distance import geodesic
 
-def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, max_pedidos, n_clusters, distancia_maxima_km=50):
+def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, max_pedidos, n_clusters, distancia_maxima_km=550):
     """
     Otimiza a alocação dos pedidos aos caminhões disponíveis, agrupando os pedidos em regiões,
     atribuindo números de carga e placas, e validando distâncias.
