@@ -10,6 +10,9 @@ from gerenciamento_frota import cadastrar_caminhoes
 from subir_pedidos import processar_pedidos, salvar_coordenadas
 import ia_analise_pedidos as ia
 
+# Coordenadas fixas do endereço de saída
+COORDENADAS_SAIDA = (LATITUDE_SAIDA, LONGITUDE_SAIDA)  # Substitua LATITUDE_SAIDA e LONGITUDE_SAIDA pelos valores reais
+
 # Exemplo de função para definir a ordem de entrega por carga
 def definir_ordem_por_carga(pedidos_df, ordem_tsp):
     rota_indices = {endereco: idx for idx, endereco in enumerate(ordem_tsp)}
@@ -183,7 +186,7 @@ def main():
                 pedidos_df['Placa'] = pedidos_df['Região'].map(regiao_para_placa)
 
                 regioes_por_caminhao = pedidos_df.groupby('Placa')['Região'].nunique()
-                caminhoes_invalidos = regioes_por_caminhao[caminhoes_invalidos > 1]
+                caminhoes_invalidos = regioes_por_caminhao[regioes_por_caminhao > 1]
 
                 if not caminhoes_invalidos.empty:
                     st.error("Erro: Um caminhão foi alocado a mais de uma região. Verifique os dados.")
