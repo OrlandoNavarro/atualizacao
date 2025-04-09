@@ -9,7 +9,7 @@ import os  # Importa o módulo para verificar a existência de arquivos
 from gerenciamento_frota import cadastrar_caminhoes
 from subir_pedidos import processar_pedidos, salvar_coordenadas
 import ia_analise_pedidos as ia
-from ia_analise_pedidos import atualizar_pedido  # Importa a função de atualização
+from database.ia_analise_pedidos import atualizar_pedido  # Importa a função de atualização
 
 # Exemplo de função para definir a ordem de entrega por carga
 def definir_ordem_por_carga(pedidos_df, ordem_tsp):
