@@ -101,7 +101,8 @@ def carregar_coordenadas_salvas(arquivo):
     """
     if os.path.exists(arquivo):
         df = pd.read_excel(arquivo)
-        return dict(zip(df['Endereco'], zip(df['Latitude'], df['Longitude'])))
+        if 'Endereco' in df.columns and 'Latitude' in df.columns and 'Longitude' in df.columns:
+            return dict(zip(df['Endereco'], zip(df['Latitude'], df['Longitude'])))
     return {}
 
 def salvar_coordenadas(coordenadas_salvas, arquivo):
