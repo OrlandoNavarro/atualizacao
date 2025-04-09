@@ -43,6 +43,13 @@ def verificar_distancias(pedidos_df, max_distancia_km):
                     return False, regiao
     return True, None
 
+def agrupar_por_proximidade(pedidos_df, n_clusters):
+    from sklearn.cluster import KMeans
+    coordenadas = pedidos_df[['Latitude', 'Longitude']].values
+    kmeans = KMeans(n_clusters=n_clusters)
+    pedidos_df['Região'] = kmeans.fit_predict(coordenadas)
+    return pedidos_df
+
 def main():
     st.title("Roteirizador de Pedidos")
     
@@ -94,7 +101,7 @@ def main():
             n_clusters = st.slider("Número de regiões para agrupar", min_value=1, max_value=10, value=1)
             percentual_frota = st.slider("Capacidade da frota a ser usada (%)", min_value=0, max_value=100, value=100)
             max_pedidos = st.slider("Número máximo de pedidos por veículo", min_value=1, max_value=30, value=12)
-            max_distancia_km = st.slider("Distância máxima entre pedidos (km)", min_value=1, max_value=100, value=50)
+            max_distancia_km = st.slider("Distância máxima entre pedidos (km)", min_value=1, max_value=100, value=10)
             
             aplicar_tsp = st.checkbox("Aplicar TSP")
             aplicar_vrp = st.checkbox("Aplicar VRP")
@@ -157,10 +164,11 @@ def main():
                     st.error("Nenhum caminhão cadastrado. Cadastre a frota na opção 'Cadastro da Frota'.")
                     return
 
-                pedidos_df = ia.agrupar_por_regiao(pedidos_df, n_clusters)
+                # Usando a função de agrupamento por proximidade
+                pedidos_df = agrupar_por_proximidade(pedidos_df, n_clusters)
 
                 if 'Região' not in pedidos_df.columns or pedidos_df['Região'].isnull().all():
-                    st.error("A coluna 'Região' não foi criada ou está vazia. Verifique os dados e a função 'ia.agrupar_por_regiao'.")
+                    st.error("A coluna 'Região' não foi criada ou está vazia. Verifique os dados e a função 'agrupar_por_proximidade'.")
                     st.stop()
 
                 pedidos_df = ia.otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, max_pedidos, n_clusters)
