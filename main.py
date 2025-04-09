@@ -90,8 +90,7 @@ def main():
                 salvar_coordenadas(coordenadas_salvas)
             
             if pedidos_df['Latitude'].isnull().any() or pedidos_df['Longitude'].isnull().any():
-                st.error("Alguns endereços não obtiveram coordenadas. Verifique os dados.")
-                return
+                st.warning("Alguns endereços não obtiveram coordenadas. As correções podem ser feitas posteriormente.")
             
             # Carrega a frota cadastrada
             try:
