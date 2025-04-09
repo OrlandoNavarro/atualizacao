@@ -86,158 +86,63 @@ def main():
                 pedidos_df['Longitude'] = pedidos_df['Endereço Completo'].apply(
                     lambda x: ia.obter_coordenadas_com_fallback(x, coordenadas_salvas)[1]
                 )
-            pedidos_df['Latitude'] = pedidos_df['Latitude'].fillna(0)
-            pedidos_df['Longitude'] = pedidos_df['Longitude'].fillna(0)
-            salvar_coordenadas(coordenadas_salvas)
+                salvar_coordenadas(coordenadas_salvas)
             
-            st.write("Cabeçalho da planilha:", list(pedidos_df.columns))
-            st.markdown("### Configurações para Roteirização")
-            n_clusters = st.slider("Número de regiões para agrupar", min_value=1, max_value=10, value=1)
+            if pedidos_df['Latitude'].isnull().any() or pedidos_df['Longitude'].isnull().any():
+                st.error("Alguns endereços não obtiveram coordenadas. Verifique os dados.")
+                return
+            
+            # Carrega a frota cadastrada
+            try:
+                caminhoes_df = pd.read_excel("caminhoes_frota.xlsx", engine="openpyxl")
+            except FileNotFoundError:
+                st.error("Nenhum caminhão cadastrado. Cadastre a frota na aba de gerenciamento.")
+                return
+
+            # Opções de configuração
+            n_clusters = st.slider("Número de regiões para agrupar", min_value=1, max_value=10, value=5)
             percentual_frota = st.slider("Capacidade da frota a ser usada (%)", min_value=0, max_value=100, value=100)
             max_pedidos = st.slider("Número máximo de pedidos por veículo", min_value=1, max_value=30, value=12)
-            
-            # Checkbox para aplicar o algoritmo TSP (Traveling Salesman Problem)
             aplicar_tsp = st.checkbox("Aplicar TSP")
-
-            # Checkbox para aplicar o algoritmo VRP (Vehicle Routing Problem)
             aplicar_vrp = st.checkbox("Aplicar VRP")
             
-            # Garante que as colunas 'Placa' e 'Carga' existam no DataFrame
-            if 'Placa' not in pedidos_df.columns:
-                st.warning("A coluna 'Placa' não foi encontrada. Ela será criada com valores vazios.")
-                pedidos_df['Placa'] = ""
-
-            if 'Carga' not in pedidos_df.columns:
-                st.warning("A coluna 'Carga' não foi encontrada. Ela será criada com valores padrão.")
-                pedidos_df['Carga'] = pedidos_df.index  # Define cada pedido como uma carga única por padrão
-
-            # Se a coluna 'Placa' existir, aplica formatação para destacar as placas em rodízio
-            if 'Placa' in pedidos_df.columns:
-                today = datetime.datetime.now().weekday()  # Monday=0, ..., Sunday=6
-                rodizio_map = {
-                    0: {'1', '2'},
-                    1: {'3', '4'},
-                    2: {'5', '6'},
-                    3: {'7', '8'},
-                    4: {'9', '0'}
-                }
-                rodizio_numbers = rodizio_map.get(today, set())  # Se hoje for fim de semana, retorna conjunto vazio
-
-                def rodizio_style(val):
-                    if isinstance(val, str) and val.strip():
-                        last_digit = val.strip()[-1]
-                        if last_digit in rodizio_numbers:
-                            return 'color: red'
-                    return ''
-                
-                st.dataframe(pedidos_df.style.applymap(rodizio_style, subset=['Placa']))
-            else:
-                st.dataframe(pedidos_df)
-            
             if st.button("Roteirizar"):
-                st.write("Roteirização em execução...")
-                progress_bar = st.empty()
-                for progresso in range(100):
-                    time.sleep(0.05)
-                    progress_bar.progress(progresso + 1)
-
-                # Filtra pedidos com peso maior que 0
                 pedidos_df = pedidos_df[pedidos_df['Peso dos Itens'] > 0]
-
-                # Verifica se as colunas necessárias existem
-                if 'Placa' not in pedidos_df.columns or 'Carga' not in pedidos_df.columns:
-                    st.error("As colunas 'Placa' e 'Carga' são necessárias para a roteirização.")
-                    st.stop()
-
-                # Garante que cada carga tenha apenas uma placa
-                cargas_por_placa = pedidos_df.groupby('Carga')['Placa'].nunique()
-                cargas_invalidas = cargas_por_placa[cargas_por_placa > 1]
-
-                if not cargas_invalidas.empty:
-                    st.error("Erro: Cada carga deve estar associada a apenas uma placa. Verifique os dados.")
-                    for carga, num_placas in cargas_invalidas.items():
-                        st.write(f"- Carga {carga}: {num_placas} placas associadas")
-                    st.stop()
-
-                try:
-                    # Carrega os dados da frota
-                    caminhoes_df = pd.read_excel("database/caminhoes_frota.xlsx", engine="openpyxl")
-                except FileNotFoundError:
-                    st.error("Nenhum caminhão cadastrado. Cadastre a frota na opção 'Cadastro da Frota'.")
-                    return
-
-                # Agrupa pedidos por região respeitando o número máximo de regiões configurado
                 pedidos_df = ia.agrupar_por_regiao(pedidos_df, n_clusters)
-
-                # Verifica se a coluna 'Região' foi criada pela função 'agrupar_por_regiao'
-                if 'Região' not in pedidos_df.columns or pedidos_df['Região'].isnull().all():
-                    st.error("A coluna 'Região' não foi criada ou está vazia. Verifique os dados e a função 'ia.agrupar_por_regiao'.")
-                    st.stop()
-
-                # Passa o DataFrame para a função de otimização
                 pedidos_df = ia.otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, max_pedidos, n_clusters)
-
-                # Define as placas associando cada caminhão a uma única região
-                regioes = pedidos_df['Região'].unique()
-                placas_disponiveis = caminhoes_df['Placa'].tolist()
-
-                if len(regioes) > len(placas_disponiveis):
-                    st.error("O número de regiões excede o número de caminhões disponíveis. Adicione mais caminhões.")
-                    st.stop()
-
-                # Associa cada região a uma placa
-                regiao_para_placa = {regiao: placas_disponiveis[i] for i, regiao in enumerate(regioes)}
-                pedidos_df['Placa'] = pedidos_df['Região'].map(regiao_para_placa)
-
-                # Garante que cada caminhão seja alocado a apenas uma região
-                regioes_por_caminhao = pedidos_df.groupby('Placa')['Região'].nunique()
-                caminhoes_invalidos = regioes_por_caminhao[regioes_por_caminhao > 1]
-
-                if not caminhoes_invalidos.empty:
-                    st.error("Erro: Um caminhão foi alocado a mais de uma região. Verifique os dados.")
-                    for placa, num_regioes in caminhoes_invalidos.items():
-                        st.write(f"- Caminhão {placa}: {num_regioes} regiões associadas")
-                    st.stop()
-
-                # Otimiza o uso da frota com base nas restrições
-                pedidos_df = ia.otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, max_pedidos, n_clusters)
-
-                # A validação de distâncias já foi feita durante a otimização
-
-                # Aplica o algoritmo TSP, se selecionado
+                
                 if aplicar_tsp:
                     G = ia.criar_grafo_tsp(pedidos_df)
                     melhor_rota, menor_distancia = ia.resolver_tsp_genetico(G)
                     st.write("Melhor rota TSP:")
                     st.write("\n".join(melhor_rota))
                     st.write(f"Menor distância TSP: {menor_distancia}")
-
-                    # Define a ordem de entrega baseada no campo 'Carga'
-                    pedidos_df = definir_ordem_por_carga(pedidos_df, melhor_rota)
-
-                # Aplica o algoritmo VRP, se selecionado
+                    pedidos_df['Ordem de Entrega TSP'] = pedidos_df['Endereço Completo'].apply(lambda x: melhor_rota.index(x) + 1)
+                
                 if aplicar_vrp:
                     rota_vrp = ia.resolver_vrp(pedidos_df, caminhoes_df)
                     st.write(f"Melhor rota VRP: {rota_vrp}")
-
-                # Exibe os dados dos pedidos e o mapa
+                
                 st.write("Dados dos Pedidos:")
                 st.dataframe(pedidos_df)
+                
                 mapa = ia.criar_mapa(pedidos_df)
                 folium_static(mapa)
-
-                # Salva o resultado da roteirização
-                output_file_path = "database/roterizacao_resultado.xlsx"
+                
+                output_file_path = "roterizacao_resultado.xlsx"
                 pedidos_df.to_excel(output_file_path, index=False)
                 st.write(f"Arquivo salvo: {output_file_path}")
                 with open(output_file_path, "rb") as file:
-                    st.download_button(
-                        "Baixar planilha",
-                        data=file,
-                        file_name="roterizacao_resultado.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                    )
-                    
+                    st.download_button("Baixar planilha", data=file, file_name="roterizacao_resultado.xlsx",
+                                       mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        
+        # Abas para Gerenciamento da Frota e Upload de Roteirizações
+        if st.checkbox("Cadastrar Caminhões"):
+            cadastrar_caminhoes()
+        
+        if st.checkbox("Subir Planilhas de Roteirizações"):
+            # Aqui você pode incluir funcionalidades extras para roteirizações
+            st.info("Funcionalidade de upload de roteirizações a ser implementada.")
     
     elif menu_opcao == "Cadastro da Frota":
         st.header("Cadastro da Frota")
@@ -254,7 +159,6 @@ def main():
         else:
             pedidos_df, coordenadas_salvas = pedidos_result
             with st.spinner("Atualizando coordenadas..."):
-                # Atualiza as coordenadas somente se estiverem faltando ou forem zero
                 pedidos_df['Latitude'] = pedidos_df.apply(
                     lambda row: ia.obter_coordenadas_com_fallback(row['Endereço Completo'], coordenadas_salvas)[0]
                         if row.get('Latitude', 0) == 0 else row['Latitude'],
@@ -277,24 +181,16 @@ def main():
 
             st.dataframe(pedidos_df)
             if st.button("Salvar alterações na planilha"):
-                # Garante que o diretório "database" exista
-                os.makedirs("database", exist_ok=True)
-                
-                # Salva o arquivo no caminho especificado
-                pedidos_df.to_excel("database/Pedidos.xlsx", index=False)
-                st.success("Planilha editada e salva com sucesso!")
-            
-            # Verifica se o arquivo existe antes de tentar abri-lo
-            if os.path.exists("database/Pedidos.xlsx"):
-                with open("database/Pedidos.xlsx", "rb") as file:
-                    st.download_button(
-                        "Baixar planilha de Pedidos",
-                        data=file,
-                        file_name="Pedidos.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                    )
-            else:
-                st.error("O arquivo 'Pedidos.xlsx' não foi encontrado. Salve a planilha antes de tentar baixá-la.")
+                try:
+                    # Garante que o diretório "database" exista
+                    os.makedirs("database", exist_ok=True)
+                    st.write("Diretório 'database' verificado/criado com sucesso.")
+                    
+                    # Salva o arquivo no caminho especificado
+                    pedidos_df.to_excel("database/Pedidos.xlsx", index=False)
+                    st.success("Planilha editada e salva com sucesso!")
+                except Exception as e:
+                    st.error(f"Erro ao salvar a planilha: {e}")
     
     elif menu_opcao == "API REST":
         st.header("Interação com API REST")
