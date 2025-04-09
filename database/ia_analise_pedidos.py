@@ -224,7 +224,7 @@ def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, ma
       max_pedidos (int): Número máximo de pedidos por caminhão.
       n_clusters (int): Número de regiões para agrupar.
       distancia_maxima_km (float): Distância máxima permitida entre pedidos de um mesmo caminhão.
-
+    
     Retorna:
       DataFrame: DataFrame atualizado com as colunas 'Placa' e 'Carga'.
     """
@@ -259,7 +259,7 @@ def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, ma
                 continue  # Pula este caminhão se os pedidos estão muito distantes
 
             pedidos_alocados = pedidos_alocados.sample(n=min(max_pedidos, len(pedidos_alocados)))
-            if not pedidos_alocados.empty:
+            if not pedidos_alocados.empty():
                 pedidos_df.loc[pedidos_alocados.index, 'Carga'] = carga_numero
                 pedidos_df.loc[pedidos_alocados.index, 'Placa'] = caminhao['Placa']
                 capacidade_peso -= pedidos_alocados['Peso dos Itens'].sum()
@@ -268,7 +268,7 @@ def otimizar_aproveitamento_frota(pedidos_df, caminhoes_df, percentual_frota, ma
 
     if pedidos_df['Placa'].isnull().any() or pedidos_df['Carga'].isnull().any():
         st.error("Não foi possível atribuir placas ou números de carga a alguns pedidos.")
-
+    
     return pedidos_df
 
 def agrupar_por_regiao(pedidos_df, n_clusters):
@@ -279,7 +279,7 @@ def agrupar_por_regiao(pedidos_df, n_clusters):
     Parâmetros:
       pedidos_df (DataFrame): DataFrame contendo as colunas 'Latitude' e 'Longitude'.
       n_clusters (int): Número de regiões para agrupar.
-
+    
     Retorna:
       DataFrame: DataFrame com a coluna 'Região' atualizada.
     """
@@ -334,7 +334,7 @@ def validar_distancias(coordenadas, distancia_maxima_km=50):
     Parâmetros:
       coordenadas (list): Lista de tuplas contendo as coordenadas (latitude, longitude).
       distancia_maxima_km (float): Distância máxima permitida entre dois pontos (em quilômetros).
-
+    
     Retorna:
       bool: True se todas as distâncias forem menores ou iguais à distância máxima, False caso contrário.
     """
