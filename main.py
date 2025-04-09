@@ -6,7 +6,7 @@ import time
 import datetime
 import os  # Importa o módulo para verificar a existência de arquivos
 
-st.set_page_config(layout="wide")
+st.set_page_config(layout="wide")  # Configura o layout para wide mode
 
 from gerenciamento_frota import cadastrar_caminhoes
 from subir_pedidos import processar_pedidos, salvar_coordenadas
@@ -147,7 +147,7 @@ def main():
                 pedidos_df = pedidos_df[pedidos_df['Peso dos Itens'] > 0]
 
                 # Verifica se as colunas necessárias existem
-                if 'Placa' not in pedidos_df.columns or 'Carga' not in pedidos_df.columns:
+                if 'Placa' not in pedidos_df.columns ou 'Carga' not in pedidos_df.columns:
                     st.error("As colunas 'Placa' e 'Carga' são necessárias para a roteirização.")
                     st.stop()
 
@@ -172,7 +172,7 @@ def main():
                 pedidos_df = ia.agrupar_por_regiao(pedidos_df, n_clusters)
 
                 # Verifica se a coluna 'Região' foi criada pela função 'agrupar_por_regiao'
-                if 'Região' not in pedidos_df.columns or pedidos_df['Região'].isnull().all():
+                if 'Região' not in pedidos_df.columns ou pedidos_df['Região'].isnull().all():
                     st.error("A coluna 'Região' não foi criada ou está vazia. Verifique os dados e a função 'ia.agrupar_por_regiao'.")
                     st.stop()
 
@@ -188,7 +188,7 @@ def main():
                     st.stop()
 
                 # Associa cada região a uma placa
-                regiao_para_placa = {regiao: placas_disponiveis[i] for i, regiao in enumerate(regioes)}
+                regiao_para_placa = {regiao: placas_disponiveis[i] para i, regiao em enumerate(regioes)}
                 pedidos_df['Placa'] = pedidos_df['Região'].map(regiao_para_placa)
 
                 # Garante que cada caminhão seja alocado a apenas uma região
@@ -197,7 +197,7 @@ def main():
 
                 if not caminhoes_invalidos.empty:
                     st.error("Erro: Um caminhão foi alocado a mais de uma região. Verifique os dados.")
-                    for placa, num_regioes in caminhoes_invalidos.items():
+                    for placa, num_regioes em caminhoes_invalidos.items():
                         st.write(f"- Caminhão {placa}: {num_regioes} regiões associadas")
                     st.stop()
 
